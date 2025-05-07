@@ -1,0 +1,230 @@
+/* CSS Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    font-family: "Courier New", Courier, monospace;
+}
+
+/** OVERIDES **/
+.btn-primary {
+    background-color: #4b5320; /* Army green */
+    color: #ffffff; /* White text */
+    border: 1px solid #3b4220; /* Darker army green border */
+}
+
+.btn-primary:hover {
+    background-color: #3b4220; /* Darker army green on hover */
+    color: #ffffff;
+}
+
+.btn-primary:active, .btn-primary:focus {
+    background-color: #2e3418; /* Even darker army green for active/focus */
+    color: #ffffff;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(75, 83, 32, 0.5); /* Army green shadow */
+}
+
+.btn-secondary {
+    background-color: #5c5c5c; /* Tactical gray */
+    color: #ffffff;
+    border: 1px solid #4a4a4a; /* Darker tactical gray border */
+}
+
+.btn-secondary:hover {
+    background-color: #4a4a4a; /* Darker tactical gray on hover */
+    color: #ffffff;
+}
+
+.btn-secondary:active, .btn-secondary:focus {
+    background-color: #3a3a3a; /* Even darker tactical gray for active/focus */
+    color: #ffffff;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(92, 92, 92, 0.5); /* Tactical gray shadow */
+}
+
+.btn-success {
+    background-color: #556b2f; /* Olive green */
+    color: #ffffff;
+    border: 1px solid #445624; /* Darker olive green border */
+}
+
+.btn-success:hover {
+    background-color: #445624; /* Darker olive green on hover */
+    color: #ffffff;
+}
+
+.btn-success:active, .btn-success:focus {
+    background-color: #36451c; /* Even darker olive green for active/focus */
+    color: #ffffff;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(85, 107, 47, 0.5); /* Olive green shadow */
+}
+
+.btn-danger {
+    background-color: #8b0000; /* Dark red */
+    color: #ffffff;
+    border: 1px solid #6b0000; /* Darker red border */
+}
+
+.btn-danger:hover {
+    background-color: #6b0000; /* Darker red on hover */
+    color: #ffffff;
+}
+
+.btn-danger:active, .btn-danger:focus {
+    background-color: #4b0000; /* Even darker red for active/focus */
+    color: #ffffff;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(139, 0, 0, 0.5); /* Dark red shadow */
+}
+
+.btn-warning {
+    background-color: #b8860b; /* Dark goldenrod */
+    color: #ffffff;
+    border: 1px solid #8b6508; /* Darker goldenrod border */
+}
+
+.btn-warning:hover {
+    background-color: #8b6508; /* Darker goldenrod on hover */
+    color: #ffffff;
+}
+
+.btn-warning:active, .btn-warning:focus {
+    background-color: #6b4e06; /* Even darker goldenrod for active/focus */
+    color: #ffffff;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(184, 134, 11, 0.5); /* Goldenrod shadow */
+}
+
+.btn-info {
+    background-color: #4682b4; /* Steel blue */
+    color: #ffffff;
+    border: 1px solid #36648b; /* Darker steel blue border */
+}
+
+.btn-info:hover {
+    background-color: #36648b; /* Darker steel blue on hover */
+    color: #ffffff;
+}
+
+.btn-info:active, .btn-info:focus {
+    background-color: #27476b; /* Even darker steel blue for active/focus */
+    color: #ffffff;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(70, 130, 180, 0.5); /* Steel blue shadow */
+}
+
+.btn-light {
+    background-color: #d3d3d3; /* Light gray */
+    color: #212529; /* Dark text */
+    border: 1px solid #b0b0b0; /* Darker light gray border */
+}
+
+.btn-light:hover {
+    background-color: #b0b0b0; /* Darker light gray on hover */
+    color: #212529;
+}
+
+.btn-light:active, .btn-light:focus {
+    background-color: #8f8f8f; /* Even darker light gray for active/focus */
+    color: #212529;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(211, 211, 211, 0.5); /* Light gray shadow */
+}
+
+.btn-dark {
+    background-color: #2f4f4f; /* Dark slate gray */
+    color: #ffffff;
+    border: 1px solid #253838; /* Darker slate gray border */
+}
+
+.btn-dark:hover {
+    background-color: #253838; /* Darker slate gray on hover */
+    color: #ffffff;
+}
+
+.btn-dark:active, .btn-dark:focus {
+    background-color: #1c2c2c; /* Even darker slate gray for active/focus */
+    color: #ffffff;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(47, 79, 79, 0.5); /* Slate gray shadow */
+}
+
+/** MARKERS **/
+.tactical-marker {
+    font-size: 28px;
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    line-height: 40px;
+    border-radius: 50%;
+    background-color: #eee;
+    border: 2px solid #333;
+  }
+
+  .infantry { color: green; background-color: #e0ffe0; }
+  .armor { color: darkred; background-color: #ffe0e0; }
+  .hq { color: navy; background-color: #e0e0ff; }
+  .medic { color: red; background-color: #fff0f0; }
+
+/* Your existing styles */
+#app {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 300px;
+    background: #1e1e1e;
+    color: white;
+    padding: 10px;
+    transition: all 0.3s ease;
+    overflow-y: auto;
+    z-index: 10;
+}
+
+.sidebar.collapsed {
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+#map {
+    flex: 1;
+    height: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+.toggle-tab {
+    position: absolute;
+    top: 10px;
+    width: 20px;
+    height: 80px;
+    background-color: #333;
+    color: white;
+    text-align: center;
+    line-height: 80px;
+    cursor: pointer;
+    z-index: 1001;
+    user-select: none;
+}
+
+#left-tab {
+    left: 0;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+#right-tab {
+    right: 0;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
