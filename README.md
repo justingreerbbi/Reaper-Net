@@ -14,6 +14,9 @@ and much more! This project is pretty cross-platform as of now and will continue
 -   Add ADS support.
 -   Add Meshtastic Support.
 -   Add support for Ham Digital Radio both traditional and not traditional encrypted communication.
+-   CesiumJS Looks Awesome
+-   https://github.com/MrMufflon/Leaflet.Elevation looks great too.
+-   https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/{time}/250m/{z}/{y}/{x}.jpg
 
 ## Features
 

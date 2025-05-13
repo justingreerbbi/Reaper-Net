@@ -1,180 +1,197 @@
 <!DOCTYPE html>
 <html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Reaper Net - v1.7.76</title>
+		<link
+			rel="stylesheet"
+			href="leaflet/leaflet.css" />
+		<link
+			rel="stylesheet"
+			href="assets/bootstrap/css/bootstrap.css" />
+		<link
+			rel="stylesheet"
+			href="assets/bootstrap/icons/bootstrap-icons.min.css" />
 
-<head>
-	<meta charset="utf-8" />
-	<title>Reaper Net - v1.7.76</title>
-	<link rel="stylesheet" href="leaflet/leaflet.css" />
-	<link rel="stylesheet" href="assets/bootstrap/css/bootstrap.css" />
-	<link rel="stylesheet" href="assets/bootstrap/icons/bootstrap-icons.min.css" />
+		<script src="leaflet/leaflet.js"></script>
+		<script src="leaflet/plugins/Leaflet.Graticule.min.js"></script>
+		<script src="assets/js/jquery-3.7.1.min.js"></script>
+		<script src="assets/js/turf.min.js"></script>
+		<script src="assets/js/leaflet-omnivore.min.js"></script>
+		<script src="assets/js/georaster.browser.bundle.min.js"></script>
+		<script src="assets/js/georaster-layer-for-leaflet.min.js"></script>
+		<script src="assets/js/jszip.min.js"></script>
+		<script src="assets/bootstrap/js/bootstrap.js"></script>
+		<link
+			rel="stylesheet"
+			href="assets/css/main.css" />
+	</head>
 
-	<script src="leaflet/leaflet.js"></script>
-	<script src="leaflet/plugins/Leaflet.Graticule.min.js"></script>
-	<script src="assets/js/jquery-3.7.1.min.js"></script>
-	<script src="assets/js/turf.min.js"></script>
-	<script src="assets/js/leaflet-omnivore.min.js"></script>
-	<script src="assets/js/georaster.browser.bundle.min.js"></script>
-	<script src="assets/js/georaster-layer-for-leaflet.min.js"></script>
-	<script src="assets/js/jszip.min.js"></script>
-	<script src="assets/bootstrap/js/bootstrap.js"></script>
-	<link rel="stylesheet" href="assets/css/main.css" />
-</head>
+	<body>
+		<div id="app">
+			<div
+				id="toolbar"
+				class="d-flex flex-column align-items-center">
+				<button
+					class="btn btn-dark mb-2"
+					title="Zoom In">
+					<i class="bi bi-zoom-in"></i>
+				</button>
+				<button
+					class="btn btn-dark mb-2"
+					title="Zoom Out">
+					<i class="bi bi-zoom-out"></i>
+				</button>
+				<button
+					class="btn btn-dark mb-2"
+					title="Layer Toggle">
+					<i class="bi bi-layers"></i>
+				</button>
+				<button
+					class="btn btn-dark mb-2"
+					title="Settings">
+					<i class="bi bi-gear"></i>
+				</button>
+			</div>
 
-<body>
-	<div id="left-tab" class="toggle-tab" onclick="toggleSidebar('left')">&gt;</div>
-	<div id="right-tab" class="toggle-tab" onclick="toggleSidebar('right')">&lt;</div>
-	<div id="app">
-		<div id="left-sidebar" class="sidebar">
-			<h4>Map Tools</h4>
-			<p id="coords-display">Lat: –, Lng: –</p>
-			<ul>
-				<li><a href="#" onclick="openTool('team')">Team Locations</a></li>
-				<li><a href="#" onclick="openTool('chat')">Open Comms</a></li>
-			</ul>
-		</div>
-		<div id="map"></div>
-		<div id="right-sidebar" class="sidebar">
-			<h4>Tool Content</h4>
-			<div id="tool-content">Click a tool to load it here</div>
-		</div>
-	</div>
-	<script>
-		function toggleSidebar(side) {
-			document.getElementById(`${side}-sidebar`).classList.toggle('collapsed');
-		}
-
-		function openTool(name) {
-			document.getElementById('tool-content').innerHTML =
-				name === 'chat' ? '<h5>Communication</h5><p>Chat UI goes here</p>' :
-					name === 'team' ? '<h5>Team Tracker</h5><p>Map team positions</p>' :
-						'No tool selected';
-		}
-
-		let map, georasterLayer = null, markers = [];
-		$(document).ready(function () {
-			map = L.map("map").setView([41.0128, -81.6054], 10);
-			L.tileLayer("tiles/arcgis/topo/{z}/{x}/{y}.png", {
-				minZoom: 6,
-				maxZoom: 13,
-				maxNativeZoom: 14,
-				noWrap: true,
-				attributionControl: false
-			}).addTo(map);
-
-			/**
-			 * CUSTOMER MARKERS
-			 */
-			function createTacticalMarker(lat, lng, type, iconName) {
-				const iconHtml = `
-		<div class="tactical-marker ${type}">
-			<i class="bi bi-${iconName}"></i>
-		</div>
-	`;
-
-				const icon = L.divIcon({
-					className: '',
-					html: iconHtml,
-					iconSize: [40, 40],
-					iconAnchor: [20, 20]
-				});
-
-				const marker = L.marker([lat, lng], { icon }).addTo(map);
-
-				marker.bindPopup(`
-					<div class="popup-content">
-						<h5>${type.charAt(0).toUpperCase() + type.slice(1)}</h5>
-						<p>Coordinates: ${lat}, ${lng}</p>
+			<div
+				id="sidebar"
+				style="position: absolute; top: 0; right: 0; width: 300px; height: 100%; background: rgba(0, 0, 0, 0.8); color: white; display: flex; flex-direction: column; z-index: 1000">
+				<div
+					id="sidebar-tabs"
+					style="display: flex; justify-content: space-around; padding: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.2)">
+					<button
+						class="btn btn-dark"
+						style="flex: 1"
+						onclick="showTabContent('tab1')">
+						<i class="bi bi-info-circle"></i>
+					</button>
+					<button
+						class="btn btn-dark"
+						style="flex: 1"
+						onclick="showTabContent('tab2')">
+						<i class="bi bi-list"></i>
+					</button>
+					<button
+						class="btn btn-dark"
+						style="flex: 1"
+						onclick="showTabContent('tab3')">
+						<i class="bi bi-gear"></i>
+					</button>
+					<button
+						class="btn btn-dark"
+						style="flex: 1"
+						onclick="showTabContent('tab3')">
+						<i class="bi bi-gear"></i>
+					</button>
+					<button
+						class="btn btn-dark"
+						style="flex: 1"
+						onclick="showTabContent('tab3')">
+						<i class="bi bi-gear"></i>
+					</button>
+					<button
+						class="btn btn-dark"
+						style="flex: 1"
+						onclick="showTabContent('tab3')">
+						<i class="bi bi-gear"></i>
+					</button>
+				</div>
+				<div
+					id="sidebar-content"
+					style="flex: 1; padding: 10px; overflow-y: auto">
+					<div
+						id="tab1"
+						class="tab-content"
+						style="display: none">
+						<h4>Reaper Net v1.7.76a</h4>
+						<p>This is the info tab content.</p>
+						<img
+							src="https://cdn1.polaris.com/globalassets/crp/2023/government-defense/03-model-lineup/01-defense/mrzr-diesel-my24-b6c9-front.png?v=b6d6fae8&format=webp"
+							alt="Logo"
+							style="width: 100%; height: auto" />
+						<p>Off-Grid base station</p>
 					</div>
-				`);
-				marker.on('click', function () {
-					this.openPopup();
-				});
+					<div
+						id="tab2"
+						class="tab-content"
+						style="display: none">
+						<h4>List</h4>
+						<p>This is the list tab content.</p>
+					</div>
+					<div
+						id="tab3"
+						class="tab-content"
+						style="display: none">
+						<h4>Settings</h4>
+						<p>This is the settings tab content.</p>
+					</div>
+				</div>
+			</div>
 
-				return marker; // ✅ This was missing
-			}
+			<div
+				id="sendMessageWindow"
+				style="
+					position: absolute;
+					top: 50px;
+					left: 50px;
+					width: 400px;
+					height: 300px;
+					background: rgba(0, 0, 0, 0.9);
+					color: white;
+					border: 1px solid rgba(255, 255, 255, 0.2);
+					z-index: 2000;
+					resize: both;
+					overflow: hidden;
+					display: none;
+				">
+				<div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.1); padding: 5px; cursor: move">
+					<span>Send Message</span>
+					<button
+						style="background: none; border: none; color: white; font-size: 16px; cursor: pointer"
+						onclick="document.getElementById('sendMessageWindow').style.display = 'none'">
+						&times;
+					</button>
+				</div>
+				<div style="padding: 10px; flex: 1; display: flex; flex-direction: column">
+					<textarea
+						style="flex: 1; width: 100%; background: rgba(0, 0, 0, 0.8); color: white; border: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 10px; padding: 5px"
+						placeholder="Type your message here..."></textarea>
+					<button style="background: rgba(0, 0, 0, 0.8); color: white; border: 1px solid rgba(255, 255, 255, 0.2); padding: 5px; cursor: pointer">Send</button>
+				</div>
+				<div style="background: rgba(255, 255, 255, 0.1); padding: 5px; display: flex; justify-content: space-around; border-top: 1px solid rgba(255, 255, 255, 0.2)">
+					<a
+						href="#"
+						style="color: white; text-decoration: none; font-size: 12px"
+						onclick="quickMessage('Wilco')">
+						Wilco
+					</a>
+					<a
+						href="#"
+						style="color: white; text-decoration: none; font-size: 12px"
+						onclick="quickMessage('Standby')">
+						Standby
+					</a>
+					<a
+						href="#"
+						style="color: white; text-decoration: none; font-size: 12px"
+						onclick="quickMessage('Roger That')">
+						Roger That
+					</a>
+					<a
+						href="#"
+						style="color: white; text-decoration: none; font-size: 12px"
+						onclick="quickMessage('41.47026,-80.87242')">
+						Send Location
+					</a>
+				</div>
+			</div>
 
-
-			/**
-			 * ON MAP HOVER/MOUSE MOVE
-			 */
-			map.on("mousemove", function (e) {
-				document.getElementById("coords-display").innerText = `Lat: ${e.latlng.lat.toFixed(5)}, Lng: ${e.latlng.lng.toFixed(5)}`;
-			});
-
-			/**
-			 * MAP CLICK TO ADD MARKER
-			 */
-			map.on("click", function (e) {
-				const lat = e.latlng.lat.toFixed(5);
-				const lng = e.latlng.lng.toFixed(5);
-				const modalHtml = `
-					<div id="map-modal" class="modal" tabindex="-1" role="dialog" style="display: block; background: rgba(0, 0, 0, 0.5);">
-						<div class="modal-dialog" role="document">
-							<div class="modal-content">
-								<div class="modal-header">
-									<h5 class="modal-title">Add Marker</h5>
-								</div>
-								<div class="modal-body">
-									<p>
-										Coordinates: <span>${lat},${lng}</span>
-									</p>
-								</div>
-								<div class="modal-footer">
-									<button type="button" class="btn btn-primary" id="save-marker-btn">Save Marker</button>
-									<button type="button" class="btn btn-secondary" onclick="$('#map-modal').remove();">Close</button>
-								</div>
-							</div>
-						</div>
-					</div>`;
-				$('body').append(modalHtml);
-				$('#save-marker-btn').on('click', function () {
-					$.ajax({
-						url: "/api/save_marker",
-						method: "POST",
-						contentType: "application/json",
-						data: JSON.stringify({ latitude: lat, longitude: lng }),
-						success: function () {
-							console.log("Marker saved successfully");
-							$("#map-modal").remove();
-							loadMarkers();
-						},
-						error: function (error) {
-							console.error("Error saving marker:", error);
-							alert("Failed to save marker.");
-						}
-					});
-				});
-			});
-
-			/**
-			 * LOAD ALL THE MARKERS ON THE MAP
-			 */
-			function loadMarkers() {
-				markers.forEach(marker => {
-					if (marker && map.hasLayer(marker)) {
-						map.removeLayer(marker);
-					}
-				});
-				markers = [];
-
-				$.ajax({
-					url: "/api/markers",
-					method: "GET",
-					success: function (data) {
-						data.forEach(marker => {
-							// You can make this dynamic later with marker.type and marker.icon
-							const m = createTacticalMarker(marker.latitude, marker.longitude, 'infantry', 'person-fill');
-							markers.push(m);
-						});
-					},
-					error: function (error) {
-						console.error("Error loading markers:", error);
-					}
-				});
-			}
-			loadMarkers();
-		});
-	</script>
-</body>
-
+			<div id="map"></div>
+		</div>
+		<script src="assets/js/main.js"></script>
+		<script src="assets/js/parts/draggable-ui.js"></script>
+		<script src="assets/js/parts/tabs.js"></script>
+		<script src="assets/js/parts/messages.js"></script>
+	</body>
 </html>
