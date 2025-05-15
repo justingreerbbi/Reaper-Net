@@ -66,6 +66,15 @@ $(document).ready(function () {
 		makeDraggable(this);
 	});
 
+	$(".modal").on("mousedown", function () {
+		let maxZ = 1050;
+		$(".modal").each(function () {
+			const z = parseInt($(this).css("z-index")) || 1050;
+			if (z > maxZ) maxZ = z;
+		});
+		$(this).css("z-index", maxZ + 1);
+	});
+
 	/**
 	 * CUSTOMER MARKERS
 	 */
