@@ -26,15 +26,22 @@ def auto_find_reaper_mesh_node():
     devices = {}
     ports = list(serial.tools.list_ports.comports())
     for port in ports:
+
+        # Slip over common devices that just eat of up scanning time.
         if any(skip in port.device for skip in ['Bluetooth', 'debug']):
             continue
         try:
+            # Attempt to open the port and send a command to detect the Reaper Node
             with serial.Serial(port.device, 115200, timeout=REAPER_NODE_DETECTION_TIMEOUT) as ser:
                 ser.flushInput()
                 time.sleep(0.5)
+
+                # Send AT+DEVICE command. If the device is a Reaper Node, it should respond with HELTEC|READY|<DEVICE_NAME>.
                 ser.write(b'AT+DEVICE\r\n')
                 start = time.time()
                 buffer = ""
+
+                # Wait for a response from the device and check if the response (if any) starts with HELTEC|READY|.
                 while time.time() - start < REAPER_NODE_DETECTION_TIMEOUT:
                     if ser.in_waiting:
                         line = ser.readline().decode(errors='ignore').strip()
@@ -61,8 +68,8 @@ def serial_reader_thread(ser):
             break
         time.sleep(0.05)
 
-# === WebSocket Command Handler ===
-@socketio.on('send_command')
+# === WebSocket Command Handler For a Reaper Node ===
+@socketio.on('send_reaper_node_command')
 def handle_send_command(data):
     command = data.get('command', '')
     if reaper_node_serial and command:

@@ -14,18 +14,18 @@ $(document).on("shown.bs.modal", "#reaperConsoleModal", function () {
 	$("#send-reaper-cmd-btn")
 		.off("click")
 		.on("click", function () {
-			send_command_to_reaper();
+			send_command_to_reaper_node();
 		});
 });
 
-function send_command_to_reaper() {
+function send_command_to_reaper_node() {
 	console.log("Send Command to Reaper");
 	let command = $("#reaper-cmd-input").val();
 	if (command === "") {
 		reaper_log.textContent += "No command entered.\n";
 		return;
 	}
-	reaper_node_socket.emit("send_command", { command });
+	reaper_node_socket.emit("send_reaper_node_command", { command });
 	console.log("Command sent:", command);
 	$("#reaper-cmd-imput").val("");
 }
@@ -139,4 +139,4 @@ function start_reaper_node_socket() {
 	}
 }
 
-$(document).ready(function () {});
+$(document).ready(function () { });
