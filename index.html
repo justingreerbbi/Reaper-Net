@@ -22,6 +22,8 @@
 		<script src="assets/js/georaster-layer-for-leaflet.min.js"></script>
 		<script src="assets/js/jszip.min.js"></script>
 		<script src="assets/bootstrap/js/bootstrap.js"></script>
+		<script src="assets/js/socket.io.min.js"></script>
+		<script src="assets/js/parts/reaper-node.js"></script>
 		<link
 			rel="stylesheet"
 			href="assets/css/main.css" />
@@ -44,13 +46,15 @@
 				</button>
 				<button
 					class="btn btn-dark mb-2"
-					title="Layer Toggle">
-					<i class="bi bi-layers"></i>
+					title="Signal Radar"
+					onclick="var modal = new bootstrap.Modal(document.getElementById('signalRadarModal'), { backdrop: false }); modal.show();">
+					<i class="bi bi-radar"></i>
 				</button>
 				<button
 					class="btn btn-dark mb-2"
-					title="Settings">
-					<i class="bi bi-gear"></i>
+					title="Reaper Node Console"
+					onclick="var modal = new bootstrap.Modal(document.getElementById('reaperConsoleModal'), { backdrop: false }); modal.show();">
+					<i class="bi bi-terminal"></i>
 				</button>
 			</div>
 
@@ -63,14 +67,16 @@
 					<button
 						class="btn btn-dark"
 						style="flex: 1"
-						onclick="showTabContent('tab1')">
-						<i class="bi bi-info-circle"></i>
+						onclick="showTabContent('tab1')"
+						title="Reaper Net Info">
+						<i class="bi bi-house"></i>
 					</button>
 					<button
 						class="btn btn-dark"
 						style="flex: 1"
-						onclick="showTabContent('tab2')">
-						<i class="bi bi-list"></i>
+						onclick="showTabContent('tab2')"
+						title="Reaper Contacts">
+						<i class="bi bi-wifi"></i>
 					</button>
 					<button
 						class="btn btn-dark"
@@ -104,20 +110,46 @@
 						id="tab1"
 						class="tab-content"
 						style="display: none">
-						<h4>Reaper Net v1.7.76a</h4>
-						<p>This is the info tab content.</p>
+						<h4 class="light-text">Reaper Net v1.7.76a</h4>
+						<p>Developed by Justin Greer</p>
+
 						<img
-							src="https://cdn1.polaris.com/globalassets/crp/2023/government-defense/03-model-lineup/01-defense/mrzr-diesel-my24-b6c9-front.png?v=b6d6fae8&format=webp"
-							alt="Logo"
-							style="width: 100%; height: auto" />
-						<p>Off-Grid base station</p>
+							src="assets/images/generated-sample.png"
+							alt="Reaper Logo"
+							style="width: 100%; margin-bottom: 10px; opacity: 0.5" />
+
+						<div class="connection-statuses">
+							<h4 class="light-text">Connections</h4>
+							<div class="status">
+								<span class="connection-name">Internet:</span>
+								<span id="internet-connection-status"></span>
+							</div>
+							<div class="status">
+								<span class="connection-name">Reaper Node:</span>
+								<span id="reaper-node-status"></span>
+							</div>
+							<div class="status">
+								<span class="connection-name">GPS Device:</span>
+								<span id="gps-status"></span>
+							</div>
+						</div>
 					</div>
 					<div
 						id="tab2"
 						class="tab-content"
 						style="display: none">
-						<h4>List</h4>
-						<p>This is the list tab content.</p>
+						<h4
+							class="light-text"
+							id="node-list-header">
+							Nodes (0)
+						</h4>
+						<div class="node-list mb-3">
+							<ul
+								id="node-list"
+								style="list-style: none; padding: 0; margin: 0">
+								No Nodes
+							</ul>
+						</div>
 					</div>
 					<div
 						id="tab3"
@@ -186,6 +218,197 @@
 					</a>
 				</div>
 			</div>
+
+			<!-- Reaper Node Console Modal -->
+			<div
+				class="modal"
+				id="reaperConsoleModal"
+				tabindex="-1"
+				aria-labelledby="reaperConsoleModalLabel"
+				aria-hidden="true">
+				<div class="modal-dialog modal-lg modal-dialog-centered">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5
+								class="modal-title light-text"
+								id="reaperConsoleModalLabel">
+								Reaper Node Console
+							</h5>
+							<button
+								type="button"
+								class="btn-close btn-close-white"
+								data-bs-dismiss="modal"
+								aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<pre
+								id="reaper-log"
+								style="height: 300px; overflow: auto; background: #000; padding: 10px; font-size: 10px; margin-bottom: 10px"></pre>
+							<input
+								id="reaper-cmd-input"
+								class="form-control"
+								type="text"
+								placeholder="AT+DEVICE"
+								style="width: 100%; margin-bottom: 10px" />
+							<button
+								id="send-reaper-cmd-btn"
+								class="btn btn-primary">
+								Send Command
+							</button>
+							<div style="display: flex; gap: 10px; margin-top: 10px">
+								<button
+									class="btn btn-secondary btn-sm"
+									onclick="document.getElementById('reaper-cmd-input').value='AT+MSG=Radio Check'">
+									AT+MSG=Radio Check
+								</button>
+								<button
+									class="btn btn-secondary btn-sm"
+									onclick="document.getElementById('reaper-cmd-input').value='AT+DEVICE'">
+									AT+DEVICE
+								</button>
+								<button
+									class="btn btn-secondary btn-sm"
+									onclick="document.getElementById('reaper-cmd-input').value='AT+'">
+									AT+
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Reaper Node Console -->
+
+			<!-- Signal Radar Modal -->
+			<div
+				class="modal"
+				id="signalRadarModal"
+				tabindex="-1"
+				aria-labelledby="signalRadarModalLabel"
+				aria-hidden="true">
+				<div class="modal-dialog modal-lg modal-dialog-centered">
+					<div
+						class="modal-content"
+						style="background: #222; color: #fff">
+						<div
+							class="modal-header"
+							style="border-bottom: 1px solid #444">
+							<h5
+								class="modal-title light-text"
+								id="signalRadarModalLabel">
+								Signal Radar
+							</h5>
+							<button
+								type="button"
+								class="btn-close btn-close-white"
+								data-bs-dismiss="modal"
+								aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<div
+								id="signal-bar-graph"
+								style="width: 100%; max-width: 900px; margin: 0 auto; padding: 20px 0">
+								<!-- Bars will be injected here -->
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<script>
+				// Example signals
+				let signals = [
+					{ name: "AirTag EJ354", strength: 0 },
+					{ name: "Tile JGTH", strength: 0 },
+					{ name: "iPhone", strength: 0 },
+					{ name: "Android Device", strength: 0 },
+				];
+
+				function randomStrength() {
+					return Math.floor(Math.random() * 101); // 0-100
+				}
+
+				function updateSignalStrengths() {
+					signals.forEach((sig) => {
+						sig.strength = randomStrength();
+					});
+				}
+
+				function renderSignalBarGraph() {
+					const container = document.getElementById("signal-bar-graph");
+					container.innerHTML = "";
+					signals.forEach((sig) => {
+						const barContainer = document.createElement("div");
+						barContainer.style.display = "flex";
+						barContainer.style.alignItems = "center";
+						barContainer.style.marginBottom = "18px";
+
+						const label = document.createElement("span");
+						label.textContent = sig.name;
+						label.style.width = "120px";
+						//label.style.fontWeight = "bold";
+
+						const barBg = document.createElement("div");
+						barBg.style.background = "#444";
+						barBg.style.width = "60%";
+						barBg.style.height = "24px";
+						barBg.style.margin = "0 16px";
+						//barBg.style.borderRadius = "8px";
+						barBg.style.overflow = "hidden";
+						barBg.style.position = "relative";
+
+						const bar = document.createElement("div");
+						bar.style.height = "100%";
+						// Convert strength (0-100) to RSSI dBm (e.g., -100 to -30)
+						const minDbm = -100,
+							maxDbm = -30;
+						const dbm = Math.round(minDbm + (sig.strength / 100) * (maxDbm - minDbm));
+						// Map dBm to width (0-100%)
+						const widthPercent = ((dbm - minDbm) / (maxDbm - minDbm)) * 100;
+						bar.style.width = widthPercent + "%";
+						bar.style.background = "linear-gradient(90deg, #2d3a13 0%, #3a4d1a 100%)";
+						bar.style.transition = "width 0.5s";
+
+						const value = document.createElement("span");
+						value.textContent = dbm + " dBm";
+						value.style.width = "50px";
+						value.style.textAlign = "right";
+
+						barBg.appendChild(bar);
+						barContainer.appendChild(label);
+						barContainer.appendChild(barBg);
+						barContainer.appendChild(value);
+
+						container.appendChild(barContainer);
+					});
+				}
+
+				function refreshSignalRadar() {
+					updateSignalStrengths();
+					renderSignalBarGraph();
+				}
+
+				document.addEventListener("DOMContentLoaded", function () {
+					// Show modal when radar button is clicked
+					const radarBtn = Array.from(document.querySelectorAll('button[title="Signal Radar"]'))[0];
+					if (radarBtn) {
+						radarBtn.addEventListener("click", function () {
+							var modal = new bootstrap.Modal(document.getElementById("signalRadarModal"));
+							modal.show();
+							refreshSignalRadar();
+						});
+					}
+
+					// Update graph every 5 seconds while modal is open
+					let intervalId = null;
+					const radarModal = document.getElementById("signalRadarModal");
+					radarModal.addEventListener("show.bs.modal", function () {
+						refreshSignalRadar();
+						intervalId = setInterval(refreshSignalRadar, 1000);
+					});
+					radarModal.addEventListener("hide.bs.modal", function () {
+						clearInterval(intervalId);
+					});
+				});
+			</script>
 
 			<div id="map"></div>
 		</div>
