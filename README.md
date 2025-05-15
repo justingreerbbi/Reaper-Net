@@ -72,6 +72,8 @@ python start.py
 
 ### Reaper Node
 
+Reaper Node Firmware: [Reaper Mesh](https://github.com/justingreerbbi/Reaper-Mesh).
+
 This application supports Reaper Nodes (custom firmware on Heltec V3) via USB. When plugged in and the app is started, the node is auto-detected, and encrypted communication is enabled.
 
 Currently:
