@@ -9,6 +9,9 @@ This project is quickly growing into it own suite where I see the possibility to
 to allow complete off-grid mapping with the ability to be tied into digital communications and SigOSINT. ADS, Meshtastic, LoraWan, GPS, node tracking,
 and much more! This project is pretty cross-platform as of now and will continue to be if I can help it.
 
+-   Reaper Node MUST be plugged in before starting Reaper Net if you want to use messaging.
+-   Reaper Main MUST be plugged in before starting Reaper Net if you want to use GPS and LTE.
+
 ## Todos
 
 -   Add ADS support.

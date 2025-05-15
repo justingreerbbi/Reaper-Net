@@ -8,13 +8,22 @@ import socket
 import sqlite3
 import os
 import webbrowser
+import sys
 
 # === Flask app setup ===
 app = Flask(__name__, static_folder='.', static_url_path='')
 
 latest_gps_response = "NOFIX"
+
 device_connected = False
 connected_device = None
+
+#=== REAPER NODE CONNECTIONS ===
+connected_reaper_node_port = None
+connected_reaper_node_name = None
+reaper_node_serial = None
+reaper_node_connected = False
+REAPER_NODE_DETECTION_TIMEOUT = 4
 
 print("")
 print("=========================================")
@@ -22,8 +31,44 @@ print("Reaper Net - v1.7.76a")
 print("=========================================")
 print("")
 
+# === Device detection ===
+def auto_find_reaper_mesh_node():
+    print("Scanning for Reaper Mesh Node...")
+    devices = {}
+    ports = list(serial.tools.list_ports.comports())
+    for port in ports:
+        # Skip common system ports (e.g., Bluetooth, cu.Bluetooth-Incoming-Port, etc.)
+        common_names = ['Bluetooth-Incoming-Port', 'cu.Bluetooth-Incoming-Port', 'tty.Bluetooth-Incoming-Port', 'cu.debug-console', 'cu.wlan-debug']
+        if port.device in devices or port.name in common_names or port.device in common_names:
+            continue
+        try:
+            with serial.Serial(port.device, 115200, timeout=REAPER_NODE_DETECTION_TIMEOUT) as ser:
+                ser.flushInput()
+                time.sleep(0.5)  # Give it a moment after connect
+                start = time.time()
+                buffer = ""
+                ser.write(b'AT+DEVICE\r\n')
+                while time.time() - start < REAPER_NODE_DETECTION_TIMEOUT:
+                    if ser.in_waiting:
+                        line = ser.readline().decode(errors='ignore').strip()
+                        #print(f"[{port.device}] {line}")
+                        buffer += line + "\n"
+                        if line.startswith("HELTEC|READY|"):
+                            label = line.split("|")[2]
+                            devices[port.device] = label
+                            break
+        except (serial.SerialException, OSError) as e:
+            print(f"Failed to open {port.device}: {e}")
+
+    return devices
+
 # === Database setup ===
 def init_db():
+
+    print("")
+    print("Initializing database...")
+    print("")
+
     db_path = os.path.join(os.path.dirname(__file__), 'reaper_net.db')
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -65,12 +110,6 @@ def init_db():
 
     conn.commit()
     conn.close()
-
-# Initialize the database
-print("")
-print("Initializing database...")
-print("")
-init_db()
 
 # Base route for serving the the map.
 @app.route('/')
@@ -148,11 +187,13 @@ def api_status():
     internet_status = check_internet()
 
     return jsonify({
-        "is_connected_to_internet": internet_status,
+        "internet_connected": internet_status,
         "device_connected": device_connected,
         "device": connected_device,
+        "reaper_node_connected": reaper_node_connected,
+        "reaper_node_name": connected_reaper_node_name,
+        "reaper_node_port": connected_reaper_node_port,
         })
-    return jsonify({"message": "Hello from Flask!"})
 
 @app.route('/api/gps')
 def get_gps():
@@ -210,48 +251,31 @@ def serial_thread(port, ready_flag):
 
 # === Entry point ===
 if __name__ == '__main__':
-    # List available COM ports
-    ports = list(serial.tools.list_ports.comports())
-    if not ports:
-        print("No serial ports found.")
-        exit(1)
 
-    print("")
-    print("OPTIONS:")
-    print("")
-    print("[s] Skip serial communication")
-    print("[x] Exit")
-    print("")
-    print("----------------------")
-    print("")
-    print("Available COM Ports:")
-    print("")
+    ## STEP 1: Check for a Reaper Node
+    reaper_node_search = auto_find_reaper_mesh_node()
+    if reaper_node_search:
+        for port, name in reaper_node_search.items():
+            if not connected_reaper_node_port:
+                reaper_node_connected = True
+                connected_reaper_node_port = port
+                connected_reaper_node_name = name
+                reaper_node_serial = serial.Serial(port, 115200, timeout=2)
+                print("Successfully connected to Reaper Node at port:", port + " (" + name + ")")                
+    else:
+        print("No Reaper Nodes Found.")
 
-    for i, port in enumerate(ports):
-        print(f"[{i}] {port.device}")
-    print("")
+    #sys.exit(0)
 
-    selection = input("SELECT DEVICE OR SKIP (s): ").strip()
-    if not selection == "s":
-        try:
-            port = ports[int(selection)].device
-        except (IndexError, ValueError):
-            print("Invalid selection.")
-            exit(1)
+    ## STEP 2: Check for Main Nina Device
+
+    ## STEP 3: Initialize database ===
+    init_db()
+
 
     # Start Flask server
     threading.Thread(target=run_flask, daemon=True).start()
-
-    # If the user selected a port, start the serial communication thread
-    if not selection == "s":
-        print('Starting serial communication...')
-        print(f"Selected port: {port}")
-        device_ready = threading.Event()
-        threading.Thread(target=serial_thread, args=(port, device_ready), daemon=True).start()
-        print("Waiting to launch GUI...")
-        device_ready.wait()
-    else:
-        print("LAunching GUI without serial communication...")
+    print("Launching GUI without serial communication...")
 
     # Launch webview window
     #window = webview.create_window("Nina The Reaper", "http://localhost:1776", width=1000, height=700)
@@ -259,7 +283,7 @@ if __name__ == '__main__':
 
     # Launch webview window with custom HTML
     # Open the default web browser to the Flask server URL
-    webbrowser.open("http://localhost:1776")
+    webbrowser.open("http://localhost:1776/api/status")
 
     # Keep the server running until manually closed
     try:
