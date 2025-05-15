@@ -8,6 +8,8 @@ This project is quickly evolving into a suite that I envision being useful for o
 
 > ⚠️ A Reaper Node **must** be plugged in before starting Reaper Net if you want to use messaging and node tracking.
 
+![Reaper Net Screenshot](https://github.com/justingreerbbi/Reaper-Net/blob/main/assets/images/screenshot-1.png)
+
 ## Who Is This For?
 
 Reaper Net can be used in multiple scenarios. If you want to set up a command center, either stationary or mobile, this project is for you. It is a great solution for off-road teams. Team leaders can use this application to see where all vehicles are and send text messages to them.
