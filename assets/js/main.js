@@ -1,4 +1,5 @@
 // main.js (Modular version)
+import { getSetting, updateSetting, watchSetting } from "./parts/settings.js";
 import { makeDraggable } from "./parts/helpers.js";
 import { startReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket } from "./parts/reaper-node.js";
 
@@ -56,6 +57,7 @@ function getServerStatusAndUpdate() {
 			updateIcon("#reaper-node-status", status.reaperNodeConnected);
 			updateIcon("#gps-status", status.gpsConnected);
 
+			// If there is a reaper node connected and the socket is not already started, start it.
 			if (status.reaperNodeConnected && !reaperNodeSocket) {
 				startReaperNodeSocket();
 			}
@@ -141,12 +143,31 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	});
 
-	function runSystemTimer() {
+	/**
+	 * FETCH STATUS AND UPDATE SYSTEM
+	 */
+	function fetchUpdates() {
 		getServerStatusAndUpdate();
-		updateReaperNodeContent();
-		// loadMarkers();
+		//loadMarkers();
 	}
 
-	systemTimer = setInterval(runSystemTimer, 5 * 60 * 1000);
-	runSystemTimer();
+	function startPolling() {
+		if (systemTimer) clearInterval(systemTimer);
+		const seconds = getSetting("status_update_interval");
+		systemTimer = setInterval(fetchUpdates, seconds * 1000);
+		console.log("⏱ Polling every", seconds, "seconds.");
+	}
+
+	watchSetting("status_update_interval", (newVal) => {
+		console.log("🔄 status_update_interval changed:", newVal);
+		startPolling();
+	});
+
+	startPolling();
+	fetchUpdates();
+
+	// Test: Update setting every 2 seconds
+	//setInterval(() => {
+	//	updateSetting("status_update_interval", 10); // Random value between 5 and 25
+	//}, 2000);
 });
