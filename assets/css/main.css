@@ -49,6 +49,32 @@ h6 {
 }
 
 /** OVERIDES **/
+.btn {
+	font-family: "Courier New", Courier, monospace;
+	font-size: 12px;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	border-radius: 0px;
+	padding: 10px 20px;
+	cursor: pointer;
+}
+
+.btn:hover {
+	outline: none !important;
+}
+.btn:focus {
+	outline: none;
+	box-shadow: 0 0 0 0.2rem rgba(34, 34, 34, 0.5); /* Dark shadow */
+}
+.btn:active {
+	outline: none;
+	box-shadow: 0 0 0 0.2rem rgba(34, 34, 34, 0.5); /* Dark shadow */
+}
+.btn:disabled {
+	background-color: #555; /* Disabled button color */
+	color: #999; /* Disabled text color */
+	cursor: not-allowed;
+}
 .btn-primary {
 	background-color: #4b5320; /* Army green */
 	color: #ffffff; /* White text */

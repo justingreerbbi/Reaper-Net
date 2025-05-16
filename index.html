@@ -78,16 +78,16 @@
 					<button
 						class="btn btn-dark"
 						style="flex: 1"
-						onclick="showTabContent('tab1')"
+						onclick="showTabContent('home-tab')"
 						title="Reaper Net Info">
-						<i class="bi bi-house"></i>
+						<i class="bi bi-house-fill"></i>
 					</button>
 					<button
 						class="btn btn-dark"
 						style="flex: 1"
-						onclick="showTabContent('tab2')"
+						onclick="showTabContent('node-list-tab')"
 						title="Reaper Contacts">
-						<i class="bi bi-wifi"></i>
+						<i class="bi bi-people-fill"></i>
 					</button>
 					<button
 						class="btn btn-dark"
@@ -118,7 +118,7 @@
 					id="sidebar-content"
 					style="flex: 1; padding: 10px; overflow-y: auto">
 					<div
-						id="tab1"
+						id="home-tab"
 						class="tab-content"
 						style="display: none">
 						<h4 class="light-text">Reaper Net v1.7.76a</h4>
@@ -172,7 +172,7 @@
 						</div>
 					</div>
 					<div
-						id="tab2"
+						id="node-list-tab"
 						class="tab-content"
 						style="display: none">
 						<h4
@@ -180,6 +180,14 @@
 							id="node-list-header">
 							Nodes (0)
 						</h4>
+						<div class="messagener-actions">
+							<button
+								id="send-group-message-btn"
+								class="btn btn-primary mb-2"
+								style="width: 100%">
+								Group Message
+							</button>
+						</div>
 						<div class="node-list mb-3">
 							<ul
 								id="node-list"
@@ -290,102 +298,6 @@
 					</div>
 				</div>
 			</div>
-			<script>
-				// Example signals
-				let signals = [
-					{ name: "AirTag EJ354", strength: 0 },
-					{ name: "Tile JGTH", strength: 0 },
-					{ name: "iPhone", strength: 0 },
-					{ name: "Android Device", strength: 0 },
-				];
-
-				function randomStrength() {
-					return Math.floor(Math.random() * 101); // 0-100
-				}
-
-				function updateSignalStrengths() {
-					signals.forEach((sig) => {
-						sig.strength = randomStrength();
-					});
-				}
-
-				function renderSignalBarGraph() {
-					const container = document.getElementById("signal-bar-graph");
-					container.innerHTML = "";
-					signals.forEach((sig) => {
-						const barContainer = document.createElement("div");
-						barContainer.style.display = "flex";
-						barContainer.style.alignItems = "center";
-						barContainer.style.marginBottom = "18px";
-
-						const label = document.createElement("span");
-						label.textContent = sig.name;
-						label.style.width = "120px";
-						//label.style.fontWeight = "bold";
-
-						const barBg = document.createElement("div");
-						barBg.style.background = "#444";
-						barBg.style.width = "60%";
-						barBg.style.height = "24px";
-						barBg.style.margin = "0 16px";
-						//barBg.style.borderRadius = "8px";
-						barBg.style.overflow = "hidden";
-						barBg.style.position = "relative";
-
-						const bar = document.createElement("div");
-						bar.style.height = "100%";
-						// Convert strength (0-100) to RSSI dBm (e.g., -100 to -30)
-						const minDbm = -100,
-							maxDbm = -30;
-						const dbm = Math.round(minDbm + (sig.strength / 100) * (maxDbm - minDbm));
-						// Map dBm to width (0-100%)
-						const widthPercent = ((dbm - minDbm) / (maxDbm - minDbm)) * 100;
-						bar.style.width = widthPercent + "%";
-						bar.style.background = "linear-gradient(90deg, #2d3a13 0%, #3a4d1a 100%)";
-						bar.style.transition = "width 0.5s";
-
-						const value = document.createElement("span");
-						value.textContent = dbm + " dBm";
-						value.style.width = "50px";
-						value.style.textAlign = "right";
-
-						barBg.appendChild(bar);
-						barContainer.appendChild(label);
-						barContainer.appendChild(barBg);
-						barContainer.appendChild(value);
-
-						container.appendChild(barContainer);
-					});
-				}
-
-				function refreshSignalRadar() {
-					updateSignalStrengths();
-					renderSignalBarGraph();
-				}
-
-				document.addEventListener("DOMContentLoaded", function () {
-					// Show modal when radar button is clicked
-					const radarBtn = Array.from(document.querySelectorAll('button[title="Signal Radar"]'))[0];
-					if (radarBtn) {
-						radarBtn.addEventListener("click", function () {
-							var modal = new bootstrap.Modal(document.getElementById("signalRadarModal"));
-							modal.show();
-							refreshSignalRadar();
-						});
-					}
-
-					// Update graph every 5 seconds while modal is open
-					let intervalId = null;
-					const radarModal = document.getElementById("signalRadarModal");
-					radarModal.addEventListener("show.bs.modal", function () {
-						refreshSignalRadar();
-						intervalId = setInterval(refreshSignalRadar, 1000);
-					});
-					radarModal.addEventListener("hide.bs.modal", function () {
-						clearInterval(intervalId);
-					});
-				});
-			</script>
 
 			<div id="map"></div>
 		</div>

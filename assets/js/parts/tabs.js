@@ -6,4 +6,4 @@ function showTabContent(tabId) {
 }
 
 // Show the first tab by default
-showTabContent("tab1");
+showTabContent("home-tab");

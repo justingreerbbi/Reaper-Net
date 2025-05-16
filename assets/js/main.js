@@ -1,7 +1,7 @@
 // main.js (Modular version)
 import { getSetting, updateSetting, watchSetting } from "./parts/settings.js";
 import { makeDraggable } from "./parts/helpers.js";
-import { startReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket } from "./parts/reaper-node.js";
+import { startReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket, createReaperGroupMessageWindow } from "./parts/reaper-node.js";
 import { listPlugins, getPlugin } from "./parts/pluginManager.js";
 
 //import { createInfoModal, createConfirmModal } from "./parts/notifications.js";
@@ -53,21 +53,6 @@ function getServerStatusAndUpdate() {
 		.catch((error) => console.error("Error fetching status:", error));
 }
 
-function loadMarkers() {
-	markers.forEach((marker) => map.hasLayer(marker) && map.removeLayer(marker));
-	markers = [];
-
-	fetch("/api/markers")
-		.then((res) => res.json())
-		.then((data) => {
-			data.forEach((marker) => {
-				const m = createTacticalMarker(marker.latitude, marker.longitude, "infantry", "person-fill");
-				markers.push(m);
-			});
-		})
-		.catch((error) => console.error("Error loading markers:", error));
-}
-
 function setupMap() {
 	map = L.map("map").setView([41.0128, -81.6054], 10);
 	L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -117,7 +102,6 @@ function setupMap() {
 document.addEventListener("DOMContentLoaded", () => {
 	setupMap();
 	document.querySelectorAll(".modal").forEach(makeDraggable);
-
 	document.querySelectorAll(".modal").forEach((modal) => {
 		modal.addEventListener("mousedown", () => {
 			let maxZ = 1050;
@@ -127,6 +111,11 @@ document.addEventListener("DOMContentLoaded", () => {
 			});
 			modal.style.zIndex = maxZ + 1;
 		});
+	});
+
+	document.getElementById("send-group-message-btn").addEventListener("click", () => {
+		console.log("Send Group Message button clicked");
+		createReaperGroupMessageWindow();
 	});
 
 	/**
@@ -153,6 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		getServerStatusAndUpdate();
 		//loadMarkers();
 		updateMemoryUsage();
+		updateReaperNodeContent();
 	}
 
 	/**
@@ -199,4 +189,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	startPolling();
 	fetchUpdates();
+
+	/**
+	 * EXAMPLE OF TAPPING INTO A PLUGIN
+	 	import { getPlugin } from "/assets/js/parts/pluginManager.js";
+		const messaging = getPlugin("ReaperMessaging");
+		if (messaging) {
+			messaging.send("Standby");
+			messaging.quick("Roger That");
+		}
+	 */
 });

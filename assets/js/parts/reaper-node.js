@@ -42,6 +42,45 @@ export function sendCommandToReaperNode(command) {
 	document.getElementById("reaper-cmd-input").value = "";
 }
 
+export function createReaperGroupMessageWindow() {
+	const modalHtml = `
+		<div class="modal fade" id="reaper-group-message-modal" tabindex="-1" aria-labelledby="reaper-group-message-modal-label" aria-hidden="true">
+			<div class="modal-dialog modal-lg">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="reaper-group-message-modal-label">Reaper Group Message</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<textarea id="reaper-group-message-textarea" rows="10" style="width: 100%;"></textarea>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-primary" id="send-reaper-group-message-btn">Send</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	`;
+
+	document.body.insertAdjacentHTML("beforeend", modalHtml);
+	const modal = new bootstrap.Modal(document.getElementById("reaper-group-message-modal"));
+	const sendButton = document.getElementById("send-reaper-group-message-btn");
+
+	sendButton.addEventListener("click", () => {
+		const message = document.getElementById("reaper-group-message-textarea").value;
+		if (message) {
+			reaperNodeSocket.emit("send_reaper_node_command", { command: "AT+MSG=" + message });
+			alert("Message sent to Reaper group.");
+			document.getElementById("reaper-group-message-modal").remove();
+			modal.hide();
+		} else {
+			alert("Please enter a message.");
+		}
+	});
+	modal.show();
+}
+
 function handleReaperResponse(data) {
 	if (typeof data !== "string") return;
 

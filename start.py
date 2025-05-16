@@ -71,6 +71,7 @@ def serial_reader_thread(ser):
 # === WebSocket Handler ===
 @socketio.on('send_reaper_node_command')
 def handle_send_command(data):
+    print(f"[RECEIVED] {data}")
     command = data.get('command', '').strip()
     if reaper_node_serial and command:
         print(f"[SEND] {command}")
