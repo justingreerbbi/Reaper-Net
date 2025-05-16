@@ -23,7 +23,12 @@
 		<script src="assets/js/jszip.min.js"></script>
 		<script src="assets/bootstrap/js/bootstrap.js"></script>
 		<script src="assets/js/socket.io.min.js"></script>
-		<script src="assets/js/parts/reaper-node.js"></script>
+		<script
+			type="module"
+			src="assets/js/parts/reaper-node.js"></script>
+		<script
+			type="module"
+			src="assets/js/parts/helpers.js"></script>
 		<link
 			rel="stylesheet"
 			href="assets/css/main.css" />
@@ -229,7 +234,7 @@
 				data-bs-backdrop="static">
 				<div class="modal-dialog modal-lg modal-dialog-centered">
 					<div class="modal-content">
-						<div class="modal-header">
+						<div class="modal-header drag-selector">
 							<h5
 								class="modal-title light-text"
 								id="reaperConsoleModalLabel">
@@ -288,12 +293,8 @@
 				aria-hidden="true"
 				data-bs-backdrop="static">
 				<div class="modal-dialog modal-lg modal-dialog-centered">
-					<div
-						class="modal-content"
-						style="background: #222; color: #fff">
-						<div
-							class="modal-header"
-							style="border-bottom: 1px solid #444">
+					<div class="modal-content">
+						<div class="modal-header drag-selector">
 							<h5
 								class="modal-title light-text"
 								id="signalRadarModalLabel">
@@ -414,7 +415,9 @@
 
 			<div id="map"></div>
 		</div>
-		<script src="assets/js/main.js"></script>
+		<script
+			type="module"
+			src="assets/js/main.js"></script>
 		<script src="assets/js/parts/draggable-ui.js"></script>
 		<script src="assets/js/parts/tabs.js"></script>
 		<script src="assets/js/parts/messages.js"></script>
