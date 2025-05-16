@@ -230,6 +230,10 @@ h6 {
 	background-color: #fff0f0;
 }
 
+hr.short {
+	width: 50px;
+}
+
 /* Your existing styles */
 #app {
 	display: flex;

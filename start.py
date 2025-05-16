@@ -81,6 +81,7 @@ def handle_send_command(data):
 def index():
     return send_from_directory('.', 'index.html')
 
+# Status API
 @app.route('/api/status')
 def api_status():
     return jsonify({
@@ -88,7 +89,17 @@ def api_status():
         "reaperNodeConnected": reaper_node_connected,
         "reaperNodeName": connected_reaper_node_name,
         "reaperNodePort": connected_reaper_node_port,
+        "backendVersion": "1.4.1",
+        "frontendVersion": "1.7.76",
+        "systemTime": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
     })
+
+# Plugins API
+@app.route('/api/plugins')
+def list_plugins():
+	plugins_dir = os.path.join(app.root_path, 'plugins')
+	plugin_files = [f for f in os.listdir(plugins_dir) if f.endswith('.js')]
+	return jsonify([os.path.splitext(p)[0] for p in plugin_files])
 
 # === Start Server ===
 def start_server():

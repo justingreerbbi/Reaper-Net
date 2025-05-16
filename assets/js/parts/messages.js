@@ -1,35 +1,51 @@
 let sendMessageWindowOffsetX, sendMessageWindowOffsetY;
 let isDraggingSendMessageWindow = false;
 
-function quickMessage(message) {
+/**
+ * Sets a quick message in the send message textarea.
+ * @param {string} message - The message to insert.
+ */
+export function quickMessage(message) {
 	const textarea = document.querySelector("#sendMessageWindow textarea");
-	textarea.value = message;
+	if (textarea) {
+		textarea.value = message;
+	}
 }
 
-$(document).ready(function () {
-	// Make the window draggable
-	const $sendMessageWindow = $("#sendMessageWindow");
+/**
+ * Enables drag functionality on the sendMessageWindow.
+ */
+export function initSendMessageWindow() {
+	const sendMessageWindow = document.getElementById("sendMessageWindow");
+	if (!sendMessageWindow) return;
 
-	$sendMessageWindow.find("div").on("mousedown", function (e) {
+	sendMessageWindow.style.display = "block";
+
+	const header = sendMessageWindow.querySelector("div");
+	if (!header) return;
+
+	header.addEventListener("mousedown", (e) => {
 		isDraggingSendMessageWindow = true;
-		sendMessageWindowOffsetX = e.clientX - $sendMessageWindow.offset().left;
-		sendMessageWindowOffsetY = e.clientY - $sendMessageWindow.offset().top;
-		$(document).on("mousemove", onMouseMoveSendMessageWindow);
-		$(document).on("mouseup", onMouseUpSendMessageWindow);
+		const rect = sendMessageWindow.getBoundingClientRect();
+		sendMessageWindowOffsetX = e.clientX - rect.left;
+		sendMessageWindowOffsetY = e.clientY - rect.top;
+
+		document.addEventListener("mousemove", onMouseMove);
+		document.addEventListener("mouseup", onMouseUp);
 	});
 
-	function onMouseMoveSendMessageWindow(e) {
-		if (isDraggingSendMessageWindow) {
-			$sendMessageWindow.css({
-				left: `${e.clientX - sendMessageWindowOffsetX}px`,
-				top: `${e.clientY - sendMessageWindowOffsetY}px`,
-			});
-		}
+	function onMouseMove(e) {
+		if (!isDraggingSendMessageWindow) return;
+		sendMessageWindow.style.left = `${e.clientX - sendMessageWindowOffsetX}px`;
+		sendMessageWindow.style.top = `${e.clientY - sendMessageWindowOffsetY}px`;
 	}
 
-	function onMouseUpSendMessageWindow() {
+	function onMouseUp() {
 		isDraggingSendMessageWindow = false;
-		$(document).off("mousemove", onMouseMoveSendMessageWindow);
-		$(document).off("mouseup", onMouseUpSendMessageWindow);
+		document.removeEventListener("mousemove", onMouseMove);
+		document.removeEventListener("mouseup", onMouseUp);
 	}
-});
+}
+
+// Optionally auto-init when DOM is ready
+document.addEventListener("DOMContentLoaded", initSendMessageWindow);

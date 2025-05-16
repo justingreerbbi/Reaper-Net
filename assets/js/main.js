@@ -2,10 +2,14 @@
 import { getSetting, updateSetting, watchSetting } from "./parts/settings.js";
 import { makeDraggable } from "./parts/helpers.js";
 import { startReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket } from "./parts/reaper-node.js";
+import { listPlugins, getPlugin } from "./parts/pluginManager.js";
+
+//import { createInfoModal, createConfirmModal } from "./parts/notifications.js";
 
 let map;
 let markers = [];
 let systemTimer;
+let pluginsLoaded = false;
 
 let status = {
 	internetConnected: false,
@@ -14,34 +18,9 @@ let status = {
 	reaperNodePort: "",
 	gpsDevice: "",
 	gpsConnected: false,
+	backendVersion: "0.0.0",
+	frontendVersion: "0.0.0",
 };
-
-function createTacticalMarker(lat, lng, type, iconName) {
-	const iconHtml = `
-    <div class="tactical-marker ${type}">
-      <i class="bi bi-${iconName}"></i>
-    </div>
-  `;
-
-	const icon = L.divIcon({
-		className: "",
-		html: iconHtml,
-		iconSize: [40, 40],
-		iconAnchor: [20, 20],
-	});
-
-	const marker = L.marker([lat, lng], { icon }).addTo(map);
-	marker.bindPopup(`
-    <div class="popup-content">
-      <h5>${type.charAt(0).toUpperCase() + type.slice(1)}</h5>
-      <p>Coordinates: ${lat}, ${lng}</p>
-    </div>
-  `);
-	marker.on("click", function () {
-		this.openPopup();
-	});
-	return marker;
-}
 
 function getServerStatusAndUpdate() {
 	fetch("/api/status")
@@ -62,7 +41,14 @@ function getServerStatusAndUpdate() {
 				startReaperNodeSocket();
 			}
 
-			console.log("Status Data:", data);
+			//console.log("Status Data:", data);
+			document.getElementById("sys-backend-version-value").innerText = status.backendVersion;
+			document.getElementById("sys-frontend-version-value").innerText = status.frontendVersion;
+			const localStorageSize = Object.keys(localStorage).reduce((total, key) => {
+				const value = localStorage.getItem(key);
+				return total + key.length + (value ? value.length : 0);
+			}, 0);
+			document.getElementById("sys-storage-size-value").innerText = `${(localStorageSize / 1024).toFixed(2)} KB`;
 		})
 		.catch((error) => console.error("Error fetching status:", error));
 }
@@ -144,30 +130,73 @@ document.addEventListener("DOMContentLoaded", () => {
 	});
 
 	/**
+	 * UPDATE MEMORY USAGE
+	 * This function updates the memory usage information in the UI.
+	 * It uses the performance.memory API to get the used JS heap size and the JS heap size limit.
+	 * If the performance.memory API is not supported, it logs a warning to the console.
+	 */
+	function updateMemoryUsage() {
+		if (performance.memory) {
+			const usedJSHeap = performance.memory.usedJSHeapSize / 1048576; // MB
+			const jsHeapLimit = performance.memory.jsHeapSizeLimit / 1048576;
+			document.getElementById("sys-memory-used-value").innerText = `${usedJSHeap.toFixed(2)} MB`;
+			document.getElementById("sys-memory-limit-value").innerText = `${jsHeapLimit.toFixed(2)} MB`;
+		} else {
+			console.warn("performance.memory is not supported in this browser. Memory stats will not be available.");
+		}
+	}
+
+	/**
 	 * FETCH STATUS AND UPDATE SYSTEM
 	 */
 	function fetchUpdates() {
 		getServerStatusAndUpdate();
 		//loadMarkers();
+		updateMemoryUsage();
 	}
 
+	/**
+	 * @todo: Plugins need to be loaded from the server before they can be accessed.
+	 *
+	 * This almost needs to be blocking until the plugins are loaded and then let the rest of the page load.
+	 * I am not sure how I am going to do this yet. I will swing back around to it.
+	 */
+	function loadPlugins() {
+		// @todo: Fetch the list of plugins from localStorage or a server endpoint
+		//const enabledPlugins = ["ExamplePlugin"]; // Example of enabled plugins
+		const enabledPlugins = ["ReaperMessaging"]; // Blank for now until I get time to incorporate the plugin manager fully.
+		fetch("/api/plugins")
+			.then((res) => res.json())
+			.then((pluginList) => {
+				pluginList.forEach((plugin) => {
+					if (!enabledPlugins.includes(plugin)) return; // Skip if not enabled
+					const script = document.createElement("script");
+					script.src = `/plugins/${plugin}.js`; // load plugin from public folder
+					script.type = "module";
+					script.onerror = () => console.error(`Failed to load plugin: ${plugin}`);
+					document.body.appendChild(script);
+				});
+				pluginsLoaded = true;
+			});
+	}
+	loadPlugins();
+
+	/**
+	 * START POLLING / TIMER
+	 */
 	function startPolling() {
 		if (systemTimer) clearInterval(systemTimer);
 		const seconds = getSetting("status_update_interval");
 		systemTimer = setInterval(fetchUpdates, seconds * 1000);
-		console.log("⏱ Polling every", seconds, "seconds.");
+		//console.log("⏱ Polling every", seconds, "seconds.");
 	}
 
+	// Set a watcher on the status_update_interval setting
 	watchSetting("status_update_interval", (newVal) => {
-		console.log("🔄 status_update_interval changed:", newVal);
+		//console.log("🔄 status_update_interval changed:", newVal);
 		startPolling();
 	});
 
 	startPolling();
 	fetchUpdates();
-
-	// Test: Update setting every 2 seconds
-	//setInterval(() => {
-	//	updateSetting("status_update_interval", 10); // Random value between 5 and 25
-	//}, 2000);
 });
