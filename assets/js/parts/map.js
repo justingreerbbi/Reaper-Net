@@ -1,3 +1,8 @@
+/**
+ * Map Module
+ * 
+ * @todo: We need to migrate the rest of the map init code over to this module when we get a chance. Let's try to keep it as clean as possible. 
+ */
 
 /**
  * Animate a marker instead of snaping.
