@@ -121,7 +121,7 @@ export function centerMapOnUserLocation() {
  * Set the map to follow the user location or not.
  */
 export function setFollowUserLocation(follow) {
-    console.log("Setting the Follow User Location to: ", follow);
+    //console.log("Setting the Follow User Location to: ", follow);
     isFollowingUserLocation = follow;
     if (follow) {
         centerMapOnUserLocation();
