@@ -17,7 +17,7 @@ export function startReaperNodeSocket() {
 	reaper_log = document.getElementById("reaper-log");
 	reaperNodeSocket = io();
 
-	reaperNodeSocket.on("serial_data", (data) => {
+	reaperNodeSocket.on("reaper_node_received", (data) => {
 		const now = new Date();
 		const timestamp = now.toLocaleTimeString();
 		reaper_log.textContent += `[${timestamp}] ${data.line}\n`;
@@ -91,6 +91,47 @@ function handleReaperResponse(data) {
 	localStorage.setItem("reaper_node_lines", JSON.stringify(reaper_node_lines));
 
 	const parts = data.split("|");
+
+	// Capture LOG Update
+	if (parts[0] === "LOG") {
+		const log_message = parts[1];
+		const log_data_event = new CustomEvent("bus:log_update", {
+			bubbles: false,
+			cancelable: false,
+			detail: log_message,
+		});
+		window.bus.dispatchEvent(log_data_event);
+		return;
+	}
+
+	// Capture GPS Update
+	if (parts[0] === "GPS") {
+		// Example: GPS|37.774900,-122.419400,10.0,5.5,180.0,7
+		const [lat, lng, alt, speed, heading, sats] = parts[1].split(",").map(Number);
+
+		const gpsData = {
+			lat,
+			lng,
+			alt,
+			speed,
+			heading,
+			satellites: sats,
+			timestamp: new Date().toISOString(),
+		};
+
+		const gps_update_event = new CustomEvent("bus:gps_update", {
+			bubbles: false,
+			cancelable: false,
+			detail: gpsData,
+		});
+		window.bus.dispatchEvent(gps_update_event);
+
+		// For the sake of sanity, let's store the last GPS location.
+		localStorage.setItem("last_gps_data", JSON.stringify(gpsData));
+		return;
+	}
+
+
 	if (parts[0] === "RECV") {
 		if (parts[1] === "FRAG") {
 			// Future fragment handling here

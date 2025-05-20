@@ -40,7 +40,7 @@ def auto_find_reaper_mesh_node():
             with serial.Serial(port.device, 115200, timeout=REAPER_NODE_DETECTION_TIMEOUT) as ser:
                 ser.flushInput()
                 time.sleep(0.5)
-                ser.write(b'AT+DEVICE\r\n')
+                ser.write(b'AT+DEVICE?\r\n')
 
                 start_time = time.time()
                 while time.time() - start_time < REAPER_NODE_DETECTION_TIMEOUT:
@@ -62,7 +62,7 @@ def serial_reader_thread(ser):
                 line = ser.readline().decode(errors='ignore').strip()
                 if line:
                     print("[Reaper Node]", line)
-                    socketio.emit('serial_data', {'line': line})
+                    socketio.emit('reaper_node_received', {'line': line})
         except Exception as e:
             print("Serial read error:", e)
             break

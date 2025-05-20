@@ -3,11 +3,16 @@ import { getSetting, updateSetting, watchSetting } from "./parts/settings.js";
 import { makeDraggable } from "./parts/helpers.js";
 import { startReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket, createReaperGroupMessageWindow } from "./parts/reaper-node.js";
 import { listPlugins, getPlugin } from "./parts/pluginManager.js";
+import { updateUserLocation, updateUserLocationOnMap, setFollowUserLocation, toggleFollowUserLocation, isFollowingUserLocation } from "./parts/map.js";
 
-//import { createInfoModal, createConfirmModal } from "./parts/notifications.js";
+// A simple lightweight event bus for communication between components.
+window.bus = new EventTarget();
 
-let map;
-let markers = [];
+window.map;
+window.markers = [];
+window.userLocation = null;
+window.userLocationMarker = null;
+
 let systemTimer;
 let pluginsLoaded = false;
 
@@ -54,14 +59,21 @@ function getServerStatusAndUpdate() {
 }
 
 function setupMap() {
-	map = L.map("map").setView([41.0128, -81.6054], 10);
+	window.map = L.map("map").setView([41.0128, -81.6054], 10);
 	L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 		minZoom: 6,
 		maxZoom: 19,
 		attribution: 'Map data © <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
 	}).addTo(map);
 
-	map.on("click", (e) => {
+	// When the map is dragged, stop following the user location.
+	window.map.on("dragstart", () => {
+		if (isFollowingUserLocation) {
+			setFollowUserLocation(false);
+		}
+	});
+
+	window.map.on("asdasd", (e) => {
 		const lat = e.latlng.lat.toFixed(5);
 		const lng = e.latlng.lng.toFixed(5);
 		const modalHtml = `
@@ -113,9 +125,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	});
 
-	document.getElementById("send-group-message-btn").addEventListener("click", () => {
-		console.log("Send Group Message button clicked");
-		createReaperGroupMessageWindow();
+	//document.getElementById("send-group-message-btn").addEventListener("click", () => {
+	//	console.log("Send Group Message button clicked");
+	//	createReaperGroupMessageWindow();
+	//});
+
+	document.getElementById("center-on-location-btn").addEventListener("click", () => {
+		toggleFollowUserLocation();
 	});
 
 	/**
@@ -189,14 +205,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	startPolling();
 	fetchUpdates();
-
-	/**
-	 * EXAMPLE OF TAPPING INTO A PLUGIN
-	 	import { getPlugin } from "/assets/js/parts/pluginManager.js";
-		const messaging = getPlugin("ReaperMessaging");
-		if (messaging) {
-			messaging.send("Standby");
-			messaging.quick("Roger That");
-		}
-	 */
 });
+
+/**
+ * SYSTEM EVENT LISTENERS
+ * These are the event listeners for the system events. 
+ * 
+ * DO NOT CHANGE OR MODIFY UNLESS YOU KNOW WHAT YOU ARE DOING.
+ */
+
+// Reaper GPS Update
+window.bus.addEventListener("bus:gps_update", (gpsData) => {
+	//console.log("GPS Update:", gpsData.detail);
+	updateUserLocation(gpsData.detail).then(() => {
+		updateUserLocationOnMap();
+	});
+});
+
+// Reaper Log from a Reaper Node
+window.bus.addEventListener("bus:log_update", (logData) => {
+	//console.log("Reaper Log:", logData.detail);
+});
+
+// @todo: Repear Incoming Group Message
+// @todo: Reaper Incoming Direct Message

@@ -62,36 +62,22 @@ h6 {
 .btn:hover {
 	outline: none !important;
 }
-.btn:focus {
-	outline: none;
-	box-shadow: 0 0 0 0.2rem rgba(34, 34, 34, 0.5); /* Dark shadow */
+
+.btn:focus, .btn:active, .btn-primary:hover {
+  outline: none !important;
+  box-shadow: none !important;
 }
-.btn:active {
-	outline: none;
-	box-shadow: 0 0 0 0.2rem rgba(34, 34, 34, 0.5); /* Dark shadow */
-}
+
 .btn:disabled {
 	background-color: #555; /* Disabled button color */
 	color: #999; /* Disabled text color */
 	cursor: not-allowed;
 }
+
 .btn-primary {
 	background-color: #4b5320; /* Army green */
 	color: #ffffff; /* White text */
 	border: 1px solid #3b4220; /* Darker army green border */
-}
-
-.btn-primary:hover {
-	background-color: #3b4220; /* Darker army green on hover */
-	color: #ffffff;
-}
-
-.btn-primary:active,
-.btn-primary:focus {
-	background-color: #2e3418; /* Even darker army green for active/focus */
-	color: #ffffff;
-	outline: none;
-	box-shadow: 0 0 0 0.2rem rgba(75, 83, 32, 0.5); /* Army green shadow */
 }
 
 .btn-secondary {
@@ -214,18 +200,6 @@ h6 {
 	border: 1px solid #253838; /* Darker slate gray border */
 }
 
-.btn-dark:hover {
-	background-color: #253838; /* Darker slate gray on hover */
-	color: #ffffff;
-}
-
-.btn-dark:active,
-.btn-dark:focus {
-	background-color: #1c2c2c; /* Even darker slate gray for active/focus */
-	color: #ffffff;
-	outline: none;
-	box-shadow: 0 0 0 0.2rem rgba(47, 79, 79, 0.5); /* Slate gray shadow */
-}
 
 /** MARKERS **/
 .tactical-marker {

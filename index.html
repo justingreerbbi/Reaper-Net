@@ -1,309 +1,208 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="utf-8" />
-		<title>Reaper Net - v1.7.76</title>
-		<link
-			rel="stylesheet"
-			href="leaflet/leaflet.css" />
-		<link
-			rel="stylesheet"
-			href="assets/bootstrap/css/bootstrap.css" />
-		<link
-			rel="stylesheet"
-			href="assets/bootstrap/icons/bootstrap-icons.min.css" />
 
-		<script src="leaflet/leaflet.js"></script>
-		<script src="leaflet/plugins/Leaflet.Graticule.min.js"></script>
-		<script src="assets/js/jquery-3.7.1.min.js"></script>
-		<script src="assets/js/turf.min.js"></script>
-		<script src="assets/js/leaflet-omnivore.min.js"></script>
-		<script src="assets/js/georaster.browser.bundle.min.js"></script>
-		<script src="assets/js/georaster-layer-for-leaflet.min.js"></script>
-		<script src="assets/js/jszip.min.js"></script>
-		<script src="assets/bootstrap/js/bootstrap.js"></script>
-		<script src="assets/js/socket.io.min.js"></script>
-		<script
-			type="module"
-			src="assets/js/parts/settings.js"></script>
-		<script
-			type="module"
-			src="assets/js/parts/reaper-node.js"></script>
-		<script
-			type="module"
-			src="assets/js/parts/helpers.js"></script>
-		<script
-			type="module"
-			src="assets/js/parts/notifications.js"></script>
-		<link
-			rel="stylesheet"
-			href="assets/css/main.css" />
-	</head>
+<head>
+	<meta charset="utf-8" />
+	<title>Reaper Net - v1.7.76</title>
+	<link rel="stylesheet" href="leaflet/leaflet.css" />
+	<link rel="stylesheet" href="assets/bootstrap/css/bootstrap.css" />
+	<link rel="stylesheet" href="assets/bootstrap/icons/bootstrap-icons.min.css" />
 
-	<body>
-		<div id="app">
-			<div
-				id="toolbar"
-				class="d-flex flex-column align-items-center">
-				<button
-					class="btn btn-dark mb-2"
-					title="Zoom In">
-					<i class="bi bi-zoom-in"></i>
-				</button>
-				<button
-					class="btn btn-dark mb-2"
-					title="Zoom Out">
-					<i class="bi bi-zoom-out"></i>
-				</button>
-				<button
-					class="btn btn-dark mb-2"
-					title="Signal Radar"
-					onclick="var modal = new bootstrap.Modal(document.getElementById('signalRadarModal'), { backdrop: false }); modal.show();">
+	<script src="leaflet/leaflet.js"></script>
+	<script src="leaflet/plugins/Leaflet.Graticule.min.js"></script>
+	<script src="assets/js/jquery-3.7.1.min.js"></script>
+	<script src="assets/js/turf.min.js"></script>
+	<script src="assets/js/leaflet-omnivore.min.js"></script>
+	<script src="assets/js/georaster.browser.bundle.min.js"></script>
+	<script src="assets/js/georaster-layer-for-leaflet.min.js"></script>
+	<script src="assets/js/jszip.min.js"></script>
+	<script src="assets/bootstrap/js/bootstrap.js"></script>
+	<script src="assets/js/socket.io.min.js"></script>
+	<script type="module" src="assets/js/parts/settings.js"></script>
+	<script type="module" src="assets/js/parts/reaper-node.js"></script>
+	<script type="module" src="assets/js/parts/helpers.js"></script>
+	<script type="module" src="assets/js/parts/notifications.js"></script>
+	<link rel="stylesheet" href="assets/css/main.css" />
+</head>
+
+<body>
+	<div id="app">
+		<div id="toolbar" class="d-flex flex-column align-items-center">
+			<button class="btn btn-dark mb-2" id="center-on-location-btn"
+				title="Toggle Center and Follow User Location">
+				<span class="d-flex justify-content-center w-100">
+					<i class="bi bi-crosshair"></i>
+				</span>
+			</button>
+			<button class="btn btn-dark mb-2" title="Signal Radar"
+				onclick="var modal = new bootstrap.Modal(document.getElementById('signalRadarModal'), { backdrop: false }); modal.show();">
+				<span class="d-flex justify-content-center w-100">
 					<i class="bi bi-radar"></i>
-				</button>
-				<button
-					class="btn btn-dark mb-2"
-					title="Reaper Node Console"
-					onclick="var modal = new bootstrap.Modal(document.getElementById('reaperConsoleModal'), { backdrop: false }); modal.show();">
+				</span>
+			</button>
+			<button class="btn btn-dark mb-2" title="Reaper Node Console"
+				onclick="var modal = new bootstrap.Modal(document.getElementById('reaperConsoleModal'), { backdrop: false }); modal.show();">
+				<span class="d-flex justify-content-center w-100">
 					<i class="bi bi-terminal"></i>
+				</span>
+
+			</button>
+		</div>
+
+		<div id="sidebar"
+			style="position: absolute; top: 0; right: 0; width: 300px; height: 100%; background: rgba(0, 0, 0, 0.8); color: white; display: flex; flex-direction: column; z-index: 1000">
+			<div id="sidebar-tabs"
+				style="display: flex; justify-content: space-around; padding: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.2)">
+				<button class="btn btn-dark" style="flex: 1" onclick="showTabContent('home-tab')"
+					title="Reaper Net Info">
+					<i class="bi bi-house-fill"></i>
+				</button>
+				<button class="btn btn-dark" style="flex: 1" onclick="showTabContent('node-list-tab')"
+					title="Reaper Contacts">
+					<i class="bi bi-people-fill"></i>
+				</button>
+				<button class="btn btn-dark" style="flex: 1" onclick="showTabContent('tab3')">
+					<i class="bi bi-gear"></i>
 				</button>
 			</div>
+			<div id="sidebar-content" style="flex: 1; padding: 10px; overflow-y: auto">
+				<div id="home-tab" class="tab-content" style="display: none">
+					<h4 class="light-text">Reaper Net v1.7.76a</h4>
+					<p>Command, Track, Connect</p>
 
-			<div
-				id="sidebar"
-				style="position: absolute; top: 0; right: 0; width: 300px; height: 100%; background: rgba(0, 0, 0, 0.8); color: white; display: flex; flex-direction: column; z-index: 1000">
-				<div
-					id="sidebar-tabs"
-					style="display: flex; justify-content: space-around; padding: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.2)">
-					<button
-						class="btn btn-dark"
-						style="flex: 1"
-						onclick="showTabContent('home-tab')"
-						title="Reaper Net Info">
-						<i class="bi bi-house-fill"></i>
-					</button>
-					<button
-						class="btn btn-dark"
-						style="flex: 1"
-						onclick="showTabContent('node-list-tab')"
-						title="Reaper Contacts">
-						<i class="bi bi-people-fill"></i>
-					</button>
-					<button
-						class="btn btn-dark"
-						style="flex: 1"
-						onclick="showTabContent('tab3')">
-						<i class="bi bi-gear"></i>
-					</button>
-					<button
-						class="btn btn-dark"
-						style="flex: 1"
-						onclick="showTabContent('tab3')">
-						<i class="bi bi-gear"></i>
-					</button>
-					<button
-						class="btn btn-dark"
-						style="flex: 1"
-						onclick="showTabContent('tab3')">
-						<i class="bi bi-gear"></i>
-					</button>
-					<button
-						class="btn btn-dark"
-						style="flex: 1"
-						onclick="showTabContent('tab3')">
-						<i class="bi bi-gear"></i>
-					</button>
-				</div>
-				<div
-					id="sidebar-content"
-					style="flex: 1; padding: 10px; overflow-y: auto">
-					<div
-						id="home-tab"
-						class="tab-content"
-						style="display: none">
-						<h4 class="light-text">Reaper Net v1.7.76a</h4>
-						<p>Command, Track, Connect</p>
+					<img src="assets/images/generated-sample.png" alt="Reaper Logo"
+						style="width: 100%; margin-bottom: 10px; opacity: 0.5" />
 
-						<img
-							src="assets/images/generated-sample.png"
-							alt="Reaper Logo"
-							style="width: 100%; margin-bottom: 10px; opacity: 0.5" />
+					<div class="connection-status">
+						<h4 class="light-text">Connections</h4>
+						<div class="status">
+							<span class="connection-name">Internet:</span>
+							<span id="internet-connection-status"></span>
+						</div>
+						<div class="status">
+							<span class="connection-name">Reaper Node:</span>
+							<span id="reaper-node-status"></span>
+						</div>
+						<div class="status">
+							<span class="connection-name">GPS Device:</span>
+							<span id="gps-status"></span>
+						</div>
+					</div>
+					<hr class="short" />
 
-						<div class="connection-status">
-							<h4 class="light-text">Connections</h4>
-							<div class="status">
-								<span class="connection-name">Internet:</span>
-								<span id="internet-connection-status"></span>
-							</div>
-							<div class="status">
-								<span class="connection-name">Reaper Node:</span>
-								<span id="reaper-node-status"></span>
-							</div>
-							<div class="status">
-								<span class="connection-name">GPS Device:</span>
-								<span id="gps-status"></span>
-							</div>
+					<div class="system-status mt-4">
+						<h4 class="light-text">System Status</h4>
+						<div class="status">
+							<span class="sys-backend-version">Backend Version:</span>
+							<span id="sys-backend-version-value">---</span>
+						</div>
+						<div class="status">
+							<span class="sys-frontend-version">Frontend Version:</span>
+							<span id="sys-frontend-version-value">---</span>
 						</div>
 						<hr class="short" />
-
-						<div class="system-status mt-4">
-							<h4 class="light-text">System Status</h4>
-							<div class="status">
-								<span class="sys-backend-version">Backend Version:</span>
-								<span id="sys-backend-version-value">---</span>
-							</div>
-							<div class="status">
-								<span class="sys-frontend-version">Frontend Version:</span>
-								<span id="sys-frontend-version-value">---</span>
-							</div>
-							<hr class="short" />
-							<div class="status">
-								<span class="sys-storage-size">Storage Size:</span>
-								<span id="sys-storage-size-value"></span>
-							</div>
-							<div class="status">
-								<span class="sys-storage-size">Memory:</span>
-								<span id="sys-memory-used-value"></span>
-							</div>
-							<div class="status">
-								<span class="sys-storage-size">Memory Limit:</span>
-								<span id="sys-memory-limit-value"></span>
-							</div>
+						<div class="status">
+							<span class="sys-storage-size">Storage Size:</span>
+							<span id="sys-storage-size-value"></span>
 						</div>
-					</div>
-					<div
-						id="node-list-tab"
-						class="tab-content"
-						style="display: none">
-						<h4
-							class="light-text"
-							id="node-list-header">
-							Nodes (0)
-						</h4>
-						<div class="messagener-actions">
-							<button
-								id="send-group-message-btn"
-								class="btn btn-primary mb-2"
-								style="width: 100%">
-								Group Message
-							</button>
+						<div class="status">
+							<span class="sys-storage-size">Memory:</span>
+							<span id="sys-memory-used-value"></span>
 						</div>
-						<div class="node-list mb-3">
-							<ul
-								id="node-list"
-								style="list-style: none; padding: 0; margin: 0">
-								No Nodes
-							</ul>
-						</div>
-					</div>
-					<div
-						id="tab3"
-						class="tab-content"
-						style="display: none">
-						<h4>Settings</h4>
-						<p>This is the settings tab content.</p>
-					</div>
-				</div>
-			</div>
-
-			<!-- Reaper Node Console Modal -->
-			<div
-				class="modal"
-				id="reaperConsoleModal"
-				tabindex="-1"
-				aria-labelledby="reaperConsoleModalLabel"
-				aria-hidden="true"
-				data-bs-backdrop="static">
-				<div class="modal-dialog modal-lg modal-dialog-centered">
-					<div class="modal-content">
-						<div class="modal-header drag-selector">
-							<h5
-								class="modal-title light-text"
-								id="reaperConsoleModalLabel">
-								Reaper Node Console
-							</h5>
-							<button
-								type="button"
-								class="btn-close btn-close-white"
-								data-bs-dismiss="modal"
-								aria-label="Close"></button>
-						</div>
-						<div class="modal-body">
-							<pre
-								id="reaper-log"
-								style="height: 300px; overflow: auto; background: #000; padding: 10px; font-size: 10px; margin-bottom: 10px"></pre>
-							<input
-								id="reaper-cmd-input"
-								class="form-control"
-								type="text"
-								placeholder="AT+DEVICE"
-								style="width: 100%; margin-bottom: 10px" />
-							<button
-								id="send-reaper-cmd-btn"
-								class="btn btn-primary">
-								Send Command
-							</button>
-							<div style="display: flex; gap: 10px; margin-top: 10px">
-								<button
-									class="btn btn-secondary btn-sm"
-									onclick="document.getElementById('reaper-cmd-input').value='AT+MSG=Radio Check'">
-									AT+MSG=Radio Check
-								</button>
-								<button
-									class="btn btn-secondary btn-sm"
-									onclick="document.getElementById('reaper-cmd-input').value='AT+DEVICE'">
-									AT+DEVICE
-								</button>
-								<button
-									class="btn btn-secondary btn-sm"
-									onclick="document.getElementById('reaper-cmd-input').value='AT+'">
-									AT+
-								</button>
-							</div>
+						<div class="status">
+							<span class="sys-storage-size">Memory Limit:</span>
+							<span id="sys-memory-limit-value"></span>
 						</div>
 					</div>
 				</div>
-			</div>
-			<!-- Reaper Node Console -->
-
-			<!-- Signal Radar Modal -->
-			<div
-				class="modal"
-				id="signalRadarModal"
-				tabindex="-1"
-				aria-labelledby="signalRadarModalLabel"
-				aria-hidden="true"
-				data-bs-backdrop="static">
-				<div class="modal-dialog modal-lg modal-dialog-centered">
-					<div class="modal-content">
-						<div class="modal-header drag-selector">
-							<h5
-								class="modal-title light-text"
-								id="signalRadarModalLabel">
-								Signal Radar
-							</h5>
-							<button
-								type="button"
-								class="btn-close btn-close-white"
-								data-bs-dismiss="modal"
-								aria-label="Close"></button>
-						</div>
-						<div class="modal-body">
-							<div
-								id="signal-bar-graph"
-								style="width: 100%; max-width: 900px; margin: 0 auto; padding: 20px 0">
-								<!-- Bars will be injected here -->
-							</div>
-						</div>
+				<div id="node-list-tab" class="tab-content" style="display: none">
+					<h4 class="light-text" id="node-list-header">
+						Nodes (0)
+					</h4>
+					<div class="messagener-actions">
+						<button id="send-group-message-btn" class="btn btn-primary mb-2" style="width: 100%">
+							Group Message
+						</button>
+					</div>
+					<div class="node-list mb-3">
+						<ul id="node-list" style="list-style: none; padding: 0; margin: 0">
+							No Nodes
+						</ul>
 					</div>
 				</div>
+				<div id="tab3" class="tab-content" style="display: none">
+					<h4>Settings</h4>
+					<p>This is the settings tab content.</p>
+				</div>
 			</div>
-
-			<div id="map"></div>
 		</div>
-		<script
-			type="module"
-			src="assets/js/main.js"></script>
-		<script src="assets/js/parts/tabs.js"></script>
-	</body>
+
+		<!-- Reaper Node Console Modal -->
+		<div class="modal" id="reaperConsoleModal" tabindex="-1" aria-labelledby="reaperConsoleModalLabel"
+			aria-hidden="true" data-bs-backdrop="static">
+			<div class="modal-dialog modal-lg modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header drag-selector">
+						<h5 class="modal-title light-text" id="reaperConsoleModalLabel">
+							Reaper Node Console
+						</h5>
+						<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+							aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<pre id="reaper-log"
+							style="height: 300px; overflow: auto; background: #000; padding: 10px; font-size: 10px; margin-bottom: 10px"></pre>
+						<input id="reaper-cmd-input" class="form-control" type="text" placeholder="AT+DEVICE"
+							style="width: 100%; margin-bottom: 10px" />
+						<button id="send-reaper-cmd-btn" class="btn btn-primary">
+							Send Command
+						</button>
+						<div style="display: flex; gap: 10px; margin-top: 10px">
+							<button class="btn btn-secondary btn-sm"
+								onclick="document.getElementById('reaper-cmd-input').value='AT+MSG=Radio Check'">
+								AT+MSG=Radio Check
+							</button>
+							<button class="btn btn-secondary btn-sm"
+								onclick="document.getElementById('reaper-cmd-input').value='AT+DEVICE'">
+								AT+DEVICE
+							</button>
+							<button class="btn btn-secondary btn-sm"
+								onclick="document.getElementById('reaper-cmd-input').value='AT+'">
+								AT+
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- Reaper Node Console -->
+
+		<!-- Signal Radar Modal -->
+		<div class="modal" id="signalRadarModal" tabindex="-1" aria-labelledby="signalRadarModalLabel"
+			aria-hidden="true" data-bs-backdrop="static">
+			<div class="modal-dialog modal-lg modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header drag-selector">
+						<h5 class="modal-title light-text" id="signalRadarModalLabel">
+							Signal Radar
+						</h5>
+						<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+							aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<div id="signal-bar-graph"
+							style="width: 100%; max-width: 900px; margin: 0 auto; padding: 20px 0">
+							<!-- Bars will be injected here -->
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div id="map"></div>
+	</div>
+	<script type="module" src="assets/js/main.js"></script>
+	<script src="assets/js/parts/tabs.js"></script>
+</body>
+
 </html>
