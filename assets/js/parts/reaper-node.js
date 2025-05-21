@@ -196,10 +196,11 @@ function handleReaperResponse(data) {
 		// Handle Direct Message
 		// Example: RECV|DMSG|sender|recipient|message|msgId
 		if (parts[1] === "DMSG") {
+			//console.log('Direct Message Received', parts);
 			const sender = parts[2];
 			const recipient = parts[3];
-			const message = parts[5];
-			const msgId = parts[6];
+			const message = parts[4];
+			const msgId = parts[5];
 
 			const m = {
 				sender,
