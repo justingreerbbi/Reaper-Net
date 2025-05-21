@@ -3,6 +3,7 @@ import { getSetting, updateSetting, watchSetting } from "./parts/settings.js";
 import { makeDraggable } from "./parts/helpers.js";
 import { startReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket, createReaperGroupMessageWindow } from "./parts/reaper-node.js";
 import { listPlugins, getPlugin } from "./parts/pluginManager.js";
+import { encryptText, decryptText, generateSecretKey } from "./parts/crypto.js";
 import { updateUserLocation, updateUserLocationOnMap, setFollowUserLocation, toggleFollowUserLocation, isFollowingUserLocation } from "./parts/map.js";
 
 // A simple lightweight event bus for communication between components.
@@ -12,6 +13,15 @@ window.map;
 window.markers = [];
 window.userLocation = null;
 window.userLocationMarker = null;
+
+// Encryption Keys for the app. This is not secure by any means on the device itself. The idea is the encrypt the data being transmitted and assumes
+// the device is secure. The keys are generated on the device and stored in localStorage.
+// If the keys are changed, any messages sent with the old keys will not be able to be decrypted.
+// @todo: Implement a SD card key storage system for the keys. This will allow for a way to load keys.
+// @todo: Implement a way to update keys between devices using a and LoRa so keys can be updated between devices remotely.
+window.secretKeys = {
+	general: "b2cc3eaae2fccd28022cc94cba41b0e220e9fdbd5a50873b07d5d93ad382fdba5440a44d16f67d66",
+};
 
 let systemTimer;
 let pluginsLoaded = false;
@@ -135,6 +145,25 @@ document.addEventListener("DOMContentLoaded", () => {
 	});
 
 	/**
+	 * Encryption and Decryption Example
+	 */
+	const message = "This is top secret.";
+	//const secretKey = generateSecretKey();
+	//console.log("Secret Key:", secretKey);
+
+	encryptText(message, window.secretKeys.general)
+		.then((encrypted) => {
+			console.log("Encrypted:", encrypted);
+			return decryptText(encrypted, window.secretKeys.general);
+		})
+		.then((decrypted) => {
+			console.log("Decrypted:", decrypted);
+		})
+		.catch((err) => {
+			console.error("Error:", err);
+		});
+
+	/**
 	 * UPDATE MEMORY USAGE
 	 * This function updates the memory usage information in the UI.
 	 * It uses the performance.memory API to get the used JS heap size and the JS heap size limit.
@@ -209,8 +238,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /**
  * SYSTEM EVENT LISTENERS
- * These are the event listeners for the system events. 
- * 
+ * These are the event listeners for the system events.
+ *
  * DO NOT CHANGE OR MODIFY UNLESS YOU KNOW WHAT YOU ARE DOING.
  */
 

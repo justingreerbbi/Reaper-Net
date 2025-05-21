@@ -18,18 +18,19 @@ While the project is not production-ready yet, it offers a glimpse into its capa
 
 ## Todos
 
-* Investigate CesiumJS for 3D mapping
-* Consider integrating [Leaflet.Elevation](https://github.com/MrMufflon/Leaflet.Elevation)
-* Explore WMTS overlays such as:
+-   Investigate CesiumJS for 3D mapping
+-   Consider integrating [Leaflet.Elevation](https://github.com/MrMufflon/Leaflet.Elevation)
+-   Explore WMTS overlays such as:
 
-  * `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/{time}/250m/{z}/{y}/{x}.jpg`
+    -   `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/{time}/250m/{z}/{y}/{x}.jpg`
 
 ## Features
 
-* Offline maps
-* Add-on support: node communication, GPS
-* Customizable and extensible
-* GeoTIFF overlay support
+-   Offline maps.
+-   Group Text Messaging.
+-   Direct Text Messages.
+-   Extendable by plugins using the core API.
+-   AES256 Encryption.
 
 ## GeoTIFF Overlay
 
@@ -37,8 +38,8 @@ Reaper Net supports uploading, converting, and applying GeoTIFF files. GeoTIFF f
 
 Sources for GeoTIFFs:
 
-* [USGS TopoView](https://ngmdb.usgs.gov/topoview/viewer/) - Free historic maps
-* [David Rumsey Map Collection](https://www.davidrumsey.com/) - Historical imagery
+-   [USGS TopoView](https://ngmdb.usgs.gov/topoview/viewer/) - Free historic maps
+-   [David Rumsey Map Collection](https://www.davidrumsey.com/) - Historical imagery
 
 ### What Are GeoTIFF Files?
 
@@ -48,19 +49,21 @@ GeoTIFF files are scanned historic maps enhanced with embedded metadata, allowin
 
 1. Clone the repository:
 
-   ```bash
-   git clone https://github.com/justingreerbbi/Reaper-Net.git
-   ```
+    ```bash
+    git clone https://github.com/justingreerbbi/Reaper-Net.git
+    ```
+
 2. Navigate to the project directory:
 
-   ```bash
-   cd reaper-net
-   ```
+    ```bash
+    cd reaper-net
+    ```
+
 3. Install dependencies:
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 ## Usage
 
@@ -78,16 +81,16 @@ This application supports Reaper Nodes (custom firmware on Heltec V3) via USB. W
 
 Currently:
 
-* Only one frequency is supported
-* LoRa settings are optimized
-* All messages are broadcast to nearby nodes
+-   Only one frequency is supported
+-   LoRa settings are optimized
+-   All messages are broadcast to nearby nodes
 
 Planned improvements:
 
-* Custom encryption keys/methods
-* Direct messaging
-* Channel scanning
-* Potential Meshtastic compatibility
+-   Custom encryption keys/methods
+-   Direct messaging
+-   Channel scanning
+-   Potential Meshtastic compatibility
 
 This project favors custom communication protocols to ensure privacy and reliability.
 
@@ -99,11 +102,11 @@ Plans are underway to design a custom board integrating the LoRa node to reduce 
 
 Supported commands:
 
-* `NR -> OK` – Device is ready
-* `NR+GPS -> NR+GPS=LAT:<lat>,LNG:<lng>` or `NR+GPS=NOFIX`
-* `NR+BATT` – Battery voltage
-* `NR+RSSI` – Signal strength
-* `NR+INFO` – Modem information
+-   `NR -> OK` – Device is ready
+-   `NR+GPS -> NR+GPS=LAT:<lat>,LNG:<lng>` or `NR+GPS=NOFIX`
+-   `NR+BATT` – Battery voltage
+-   `NR+RSSI` – Signal strength
+-   `NR+INFO` – Modem information
 
 ## Contributing
 
@@ -112,19 +115,22 @@ Contributions are welcome!
 1. Fork the repository
 2. Create a new branch:
 
-   ```bash
-   git checkout -b feature-name
-   ```
+    ```bash
+    git checkout -b feature-name
+    ```
+
 3. Commit your changes:
 
-   ```bash
-   git commit -m "Add feature-name"
-   ```
+    ```bash
+    git commit -m "Add feature-name"
+    ```
+
 4. Push your branch:
 
-   ```bash
-   git push origin feature-name
-   ```
+    ```bash
+    git push origin feature-name
+    ```
+
 5. Open a pull request
 
 ## License
