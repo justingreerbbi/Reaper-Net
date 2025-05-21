@@ -1,4 +1,4 @@
-/* CSS Reset */
+/* === RESET === */
 * {
 	margin: 0;
 	padding: 0;
@@ -8,238 +8,260 @@
 html,
 body {
 	height: 100%;
-	font-family: "Arial", sans-serif;
+	background-color: #0e0e0e;
+	color: #c9c9c9;
+	font-family: "OCR A Extended", "Courier New", Courier, monospace;
 	font-size: 15px;
-	font-weight: normal;
+	line-height: 1.5;
 }
+
+/* === TYPOGRAPHY === */
+body,
+p,
+span,
+label,
+input,
+textarea,
+button,
+#node-list,
+.message-item,
+.modal,
+.tab-content {
+	font-family: "OCR A Extended", "Courier New", Courier, monospace;
+}
+
 h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
-	font-family: "Arial", sans-serif;
-	font-weight: bold;
-	color: #2f4f4f;
-	margin-bottom: 0.5em;
+	font-weight: normal;
 	line-height: 1.2;
+	margin-bottom: 0.5em;
+	text-transform: uppercase;
 }
 
 h1 {
 	font-size: 2.2em;
+	color: #d2b48c;
 }
 h2 {
 	font-size: 1.8em;
+	color: #c0b080;
 }
 h3 {
 	font-size: 1.5em;
+	color: #b5b5b5;
 }
 h4 {
 	font-size: 1.2em;
+	color: #aaaaaa;
 }
 h5 {
 	font-size: 1em;
+	color: #999999;
 }
 h6 {
 	font-size: 0.9em;
+	color: #777777;
 }
 
 .light-text {
-	color: #d2b48c; /* Army tan */
+	color: #d2b48c;
 }
 
-/** OVERIDES **/
+/* === BUTTONS === */
 .btn {
-	font-family: "Courier New", Courier, monospace;
-	font-size: 12px;
-	letter-spacing: 1px;
+	font-size: 13px;
 	text-transform: uppercase;
-	border-radius: 0px;
+	letter-spacing: 1px;
 	padding: 10px 20px;
+	border: 1px solid transparent;
+	background-color: #2a2a2a;
+	color: #f0f0f0;
 	cursor: pointer;
+	border-radius: 2px;
+	transition: background-color 0.2s;
+	background-image: none !important;
+	box-shadow: none !important;
 }
 
-.btn:hover {
+.btn:hover,
+.btn:focus {
+	background-color: #333;
+	outline: none;
+}
+
+/* Pressed State: Slight Transparency */
+.btn:active,
+.btn:focus:active,
+button:active,
+button:focus:active {
+	background-color: rgba(42, 42, 42, 0.8) !important;
+	box-shadow: none !important;
 	outline: none !important;
+	border: none !important;
 }
 
+/* Variant Buttons */
+.btn-primary {
+	background-color: #3e4d2c;
+	border-color: #2c3a1e;
+}
+.btn-primary:hover {
+	background-color: #2c3a1e;
+}
+.btn-primary:active {
+	background-color: rgba(62, 77, 44, 0.8) !important;
+}
+
+.btn-secondary {
+	background-color: #3a3a3a;
+	border-color: #2c2c2c;
+}
+.btn-secondary:hover {
+	background-color: #2c2c2c;
+}
+.btn-secondary:active {
+	background-color: rgba(58, 58, 58, 0.8) !important;
+}
+
+.btn-success {
+	background-color: #4c5e36;
+	border-color: #3b4b28;
+}
+.btn-success:hover {
+	background-color: #3b4b28;
+}
+.btn-success:active {
+	background-color: rgba(76, 94, 54, 0.8) !important;
+}
+
+.btn-danger {
+	background-color: #5a2b2b;
+	border-color: #3f1a1a;
+}
+.btn-danger:hover {
+	background-color: #3f1a1a;
+}
+.btn-danger:active {
+	background-color: rgba(90, 43, 43, 0.8) !important;
+}
+
+.btn-warning {
+	background-color: #a88b3e;
+	color: #000;
+	border-color: #8b722e;
+}
+.btn-warning:hover {
+	background-color: #8b722e;
+}
+.btn-warning:active {
+	background-color: rgba(168, 139, 62, 0.8) !important;
+}
+
+.btn-info {
+	background-color: #3a5068;
+	border-color: #2b3a4d;
+}
+.btn-info:hover {
+	background-color: #2b3a4d;
+}
+.btn-info:active {
+	background-color: rgba(58, 80, 104, 0.8) !important;
+}
+
+.btn-light {
+	background-color: #888;
+	color: #111;
+	border-color: #777;
+}
+.btn-light:active {
+	background-color: rgba(136, 136, 136, 0.8) !important;
+}
+
+.btn-dark {
+	background-color: #1e1e1e;
+	color: #fff;
+	border-color: #111;
+}
+.btn-dark:active {
+	background-color: rgba(30, 30, 30, 0.8) !important;
+}
+
+/* Disabled */
+.btn:disabled {
+	background-color: #444;
+	color: #777;
+	cursor: not-allowed;
+}
+
+/* REMOVE ALL BOOTSTRAP BUTTON INHERITANCE */
+.btn,
 .btn:focus,
 .btn:active,
-.btn-primary:hover {
+.btn:focus:active,
+.btn-primary:focus,
+.btn-primary:active,
+.btn-secondary:focus,
+.btn-secondary:active,
+.btn-success:focus,
+.btn-success:active,
+.btn-danger:focus,
+.btn-danger:active,
+.btn-warning:focus,
+.btn-warning:active,
+.btn-info:focus,
+.btn-info:active {
+	box-shadow: none !important;
+	outline: none !important;
+	border: none !important;
+	background-image: none !important;
+}
+
+/* GLOBAL: Remove Bootstrap outlines and transitions */
+*:focus {
 	outline: none !important;
 	box-shadow: none !important;
 }
 
-.btn:disabled {
-	background-color: #555; /* Disabled button color */
-	color: #999; /* Disabled text color */
-	cursor: not-allowed;
-}
-
-.btn-primary {
-	background-color: #4b5320; /* Army green */
-	color: #ffffff; /* White text */
-	border: 1px solid #3b4220; /* Darker army green border */
-}
-
-.btn-secondary {
-	background-color: #5c5c5c; /* Tactical gray */
-	color: #ffffff;
-	border: 1px solid #4a4a4a; /* Darker tactical gray border */
-}
-
-.btn-secondary:hover {
-	background-color: #4a4a4a; /* Darker tactical gray on hover */
-	color: #ffffff;
-}
-
-.btn-secondary:active,
-.btn-secondary:focus {
-	background-color: #3a3a3a; /* Even darker tactical gray for active/focus */
-	color: #ffffff;
-	outline: none;
-	box-shadow: 0 0 0 0.2rem rgba(92, 92, 92, 0.5); /* Tactical gray shadow */
-}
-
-.btn-success {
-	background-color: #556b2f; /* Olive green */
-	color: #ffffff;
-	border: 1px solid #445624; /* Darker olive green border */
-}
-
-.btn-success:hover {
-	background-color: #445624; /* Darker olive green on hover */
-	color: #ffffff;
-}
-
-.btn-success:active,
-.btn-success:focus {
-	background-color: #36451c; /* Even darker olive green for active/focus */
-	color: #ffffff;
-	outline: none;
-	box-shadow: 0 0 0 0.2rem rgba(85, 107, 47, 0.5); /* Olive green shadow */
-}
-
-.btn-danger {
-	background-color: #8b0000; /* Dark red */
-	color: #ffffff;
-	border: 1px solid #6b0000; /* Darker red border */
-}
-
-.btn-danger:hover {
-	background-color: #6b0000; /* Darker red on hover */
-	color: #ffffff;
-}
-
-.btn-danger:active,
-.btn-danger:focus {
-	background-color: #4b0000; /* Even darker red for active/focus */
-	color: #ffffff;
-	outline: none;
-	box-shadow: 0 0 0 0.2rem rgba(139, 0, 0, 0.5); /* Dark red shadow */
-}
-
-.btn-warning {
-	background-color: #b8860b; /* Dark goldenrod */
-	color: #ffffff;
-	border: 1px solid #8b6508; /* Darker goldenrod border */
-}
-
-.btn-warning:hover {
-	background-color: #8b6508; /* Darker goldenrod on hover */
-	color: #ffffff;
-}
-
-.btn-warning:active,
-.btn-warning:focus {
-	background-color: #6b4e06; /* Even darker goldenrod for active/focus */
-	color: #ffffff;
-	outline: none;
-	box-shadow: 0 0 0 0.2rem rgba(184, 134, 11, 0.5); /* Goldenrod shadow */
-}
-
-.btn-info {
-	background-color: #4682b4; /* Steel blue */
-	color: #ffffff;
-	border: 1px solid #36648b; /* Darker steel blue border */
-}
-
-.btn-info:hover {
-	background-color: #36648b; /* Darker steel blue on hover */
-	color: #ffffff;
-}
-
-.btn-info:active,
-.btn-info:focus {
-	background-color: #27476b; /* Even darker steel blue for active/focus */
-	color: #ffffff;
-	outline: none;
-	box-shadow: 0 0 0 0.2rem rgba(70, 130, 180, 0.5); /* Steel blue shadow */
-}
-
-.btn-light {
-	background-color: #d3d3d3; /* Light gray */
-	color: #212529; /* Dark text */
-	border: 1px solid #b0b0b0; /* Darker light gray border */
-}
-
-.btn-light:hover {
-	background-color: #b0b0b0; /* Darker light gray on hover */
-	color: #212529;
-}
-
-.btn-light:active,
-.btn-light:focus {
-	background-color: #8f8f8f; /* Even darker light gray for active/focus */
-	color: #212529;
-	outline: none;
-	box-shadow: 0 0 0 0.2rem rgba(211, 211, 211, 0.5); /* Light gray shadow */
-}
-
-.btn-dark {
-	background-color: #2f4f4f; /* Dark slate gray */
-	color: #ffffff;
-	border: 1px solid #253838; /* Darker slate gray border */
-}
-
-/** MARKERS **/
+/* === TACTICAL MARKERS === */
 .tactical-marker {
-	font-size: 28px;
+	font-size: 24px;
 	width: 40px;
 	height: 40px;
-	text-align: center;
 	line-height: 40px;
+	text-align: center;
 	border-radius: 50%;
-	background-color: #eee;
-	border: 2px solid #333;
+	border: 2px solid #555;
+	background-color: #202020;
+	color: #d2b48c;
+	user-select: none;
 }
 
 .infantry {
-	color: green;
-	background-color: #e0ffe0;
+	background-color: #1f2115;
+	color: #b0a060;
 }
 .armor {
-	color: darkred;
-	background-color: #ffe0e0;
+	background-color: #2a1a1a;
+	color: #a05050;
 }
 .hq {
-	color: navy;
-	background-color: #e0e0ff;
+	background-color: #1b1f24;
+	color: #708090;
 }
 .medic {
-	color: red;
-	background-color: #fff0f0;
+	background-color: #2b1b1b;
+	color: #cc6666;
 }
 
-hr.short {
-	width: 50px;
-}
-
-/* Your existing styles */
+/* === LAYOUT STRUCTURE === */
 #app {
 	display: flex;
-	height: 100vh;
 	width: 100vw;
+	height: 100vh;
 	overflow: hidden;
 }
 
@@ -250,26 +272,26 @@ hr.short {
 	z-index: 1;
 }
 
-/**
-* TOOLBARS
-**/
+/* === TOOLBAR === */
 #toolbar {
 	position: absolute;
 	top: 100px;
 	left: 10px;
 	width: 60px;
-	background-color: rgba(0, 0, 0, 0.6);
-	border-radius: 8px;
+	background-color: rgba(15, 15, 15, 0.9);
+	border-radius: 4px;
 	padding: 10px;
-	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 	z-index: 1000;
 	cursor: move;
 }
 
 #toolbar button {
 	width: 100%;
+	margin-bottom: 6px;
 }
 
+/* === SIDEBAR / TABS === */
 #sidebar-tabs .btn {
 	text-align: center;
 	font-size: 13px;
@@ -278,100 +300,105 @@ hr.short {
 
 .tab-content p {
 	font-size: 14px;
+	color: #c9c9c9;
 }
 
 .tab-content h4 {
 	font-size: 16px;
+	color: #d2b48c;
+	text-transform: uppercase;
 }
 
+/* === STATUS TEXT === */
 .connected-text {
-	font-size: 14px;
-	color: #445624;
+	color: #9fae6d;
 }
+
 .disconnected-text {
-	font-size: 14px;
-	color: #8b0000;
+	color: #aa5f5f;
 }
 
-/* NODES LIST STYLES */
-.node-list {
-	font-family: "Courier New", Courier, monospace;
+/* === NODE LIST === */
+#node-list {
 	font-size: 13px;
-	letter-spacing: 1px;
-	color: #77ef00ee;
+	color: #c9c9c9;
 }
 
-.node-list li {
-	background: #222;
-	border-bottom: 1px solid #444;
-	padding: 12px 10px;
+#node-list .node-list-item {
+	background: #151515;
+	border-bottom: 1px solid #333;
+	padding: 10px 12px;
+	transition: background 0.2s ease;
 }
 
-.node-list li .node-list-item-msg-btn {
-	background: #444;
-	color: #fff;
+#node-list .node-list-item:hover {
+	background: #1d1d1d;
+}
+
+#node-list .node-list-item-msg-btn {
+	background: #2a2a2a;
+	color: #ccc;
 	border: none;
-	padding: 5px 10px;
+	padding: 6px 10px;
 	cursor: pointer;
 	margin-top: 5px;
-	display: block;
 }
 
-.node-list li .node-list-item-msg-btn:hover {
-	background: #555;
+#node-list .node-list-item-msg-btn:hover {
+	background: #3a3a3a;
 }
 
-.node-list-callsign {
+#node-list .first-seen,
+#node-list .last-seen {
+	color: #8e8e6e;
+	font-size: 12px;
 }
 
+/* === SIGNAL === */
 #signal-bar-graph {
 	font-size: 11px;
+	color: #888;
 }
 
-/* Tactical Bootstrap Modal Styles */
+/* === MODALS === */
 .modal-content {
-	background-color: #222; /* Dark background */
-	border-radius: 0px;
-	box-shadow: 0 4px 24px rgba(34, 34, 34, 0.8);
-	font-family: "Courier New", Courier, monospace;
-	color: #77ef00ee; /* Tactical green text */
+	background-color: #181818;
+	color: #d2d2d2;
+	border-radius: 0;
+	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.9);
 }
 
 .modal-header {
-	background-color: #121313;
-	border-bottom: 1px solid #445624;
-	color: #d2b48c; /* Army tan */
+	background-color: #121212;
+	border-bottom: 1px solid #39452e;
 	padding: 12px 16px;
-	border-radius: 0 !important;
 	cursor: move;
 }
 
 .modal-title {
 	font-size: 1em;
-	font-weight: normal;
 	letter-spacing: 1px;
-	color: #d2b48c !important;
+	color: #d2b48c;
+	text-transform: uppercase;
 }
 
 .modal-body {
-	background-color: #171717;
-	color: #d2b48c; /* Army tan */
+	background-color: #1a1a1a;
 	padding: 16px;
+	color: #ccc;
 }
 
 .modal-footer {
-	background-color: #222;
-	border-top: 1px solid #445624;
+	background-color: #111;
+	border-top: 1px solid #333;
 	padding: 10px 16px;
 }
 
 .modal-footer .btn {
-	font-family: "Courier New", Courier, monospace;
-	font-size: 13px;
 	font-weight: bold;
-	letter-spacing: 1px;
 }
 
+/* Hide backdrop */
 .modal-backdrop.show {
 	background-color: #000;
 	opacity: 0.4;
@@ -389,33 +416,40 @@ hr.short {
 	width: fit-content;
 }
 
+/* === MESSAGES === */
 #group-messages-list .message-item {
-	background-color: #171717; /* Dark tactical background */
-	color: #77ef00ee; /* Tactical green text */
+	background-color: #121212;
+	color: #c0c0c0;
 	padding: 12px 14px;
 	margin-bottom: 12px;
-	border-left: 4px solid #4b5320; /* Army green accent */
-	border-radius: 0;
-	font-family: "Courier New", Courier, monospace;
-	box-shadow: 0 2px 8px rgba(34, 34, 34, 0.5);
+	border-left: 4px solid #3a5f2d;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 #group-messages-list .message-item .node-name {
 	font-weight: bold;
-	color: #d2b48c; /* Army tan */
-	letter-spacing: 1px;
 	font-size: 14px;
+	letter-spacing: 1px;
+	text-transform: uppercase;
 }
 
 #group-messages-list .message-item .message-content {
 	font-size: 12px;
-	color: #77ef00ee; /* Tactical green */
+	color: #cccccc;
 	margin-top: 2px;
 }
 
 #group-messages-list .message-item .timestamp {
 	font-size: 12px;
-	color: #5c5c5c; /* Tactical gray */
+	color: #666;
 	margin-top: 4px;
 	display: block;
+	font-style: italic;
+}
+
+/* === HR === */
+hr.short {
+	width: 50px;
+	border-color: #444;
+	margin: 1em 0;
 }

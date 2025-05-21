@@ -44,7 +44,7 @@ export function sendCommandToReaperNode(command) {
 
 export function createReaperGroupMessageWindow() {
 	const modalHtml = `
-		<div class="modal fade" id="reaper-group-message-modal" tabindex="-1" aria-labelledby="reaper-group-message-modal-label" aria-hidden="true">
+		<div class="modal fade" id="reaper-group-message-modal" tabindex="-1" aria-labelledby="reaper-group-message-modal-label" inert>
 			<div class="modal-dialog modal-lg">
 				<div class="modal-content">
 					<div class="modal-header">
@@ -329,16 +329,17 @@ export function updateReaperNodeContent() {
 
 			return `
 			<li>
-				<span class="node-list-callsign">
-					CALLSIGN: ${node.device_name.toUpperCase()}<br>
-					<span style="font-size: 12px; color: #aaa">
-						First Contact: <br/>${foundAt}<br>
-						Last Check In: ${lastCheckIn}
-					</span>
-				</span>
-				<button class="node-list-item-msg-btn" data-device-id="${node.device_name}">
-					SEND MSG
-				</button>
+				<div class="node-list-item">
+					<div class="node-name light-text">CALLSIGN: ${node.device_name.toUpperCase()}</div>
+					<div class="node-list-item-sub">
+						<div class="node-telemetry">${node.telemetry ? `Lat: ${node.telemetry.lat}, Lon: ${node.telemetry.lon}` : "No GPS Data"}</div>
+						<div class="first-seen"><strong>First Contact:</strong> <br/>${foundAt}</div>
+						<div class="last-seen"><strong>Last Seen:</strong> <br/>${lastCheckIn}</div>
+					</div>
+					<button class="node-list-item-msg-btn" data-device-id="${node.device_name}">
+						SEND MSG
+					</button>
+				</div>
 			</li>
 		`;
 		})
