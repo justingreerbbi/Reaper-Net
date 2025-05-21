@@ -83,7 +83,7 @@ export function createReaperGroupMessageWindow() {
 
 /**
  * Add a Reaper Node to the contact list
- * @param {*} deviceName 
+ * @param {*} deviceName
  */
 function addReaperNodeToContactList(deviceName) {
 	let nodes = [];
@@ -108,7 +108,7 @@ function addReaperNodeToContactList(deviceName) {
 
 /**
  * Add a Message to the group message storage.
- * @param {*} m 
+ * @param {*} m
  */
 function addGroupMessageToStorage(m) {
 	let groupMessages = [];
@@ -127,7 +127,7 @@ function addGroupMessageToStorage(m) {
 
 /**
  * Add Direct Message to the storage.
- * @param {*} m 
+ * @param {*} m
  */
 function addDirectMessageToStorage(m) {
 	let directMessages = [];
@@ -284,11 +284,24 @@ function handleReaperResponse(data) {
 				node.last_seen = now.toISOString();
 			}
 
-			localStorage.setItem("reaper_nodes_found", JSON.stringify(reaper_nodes_found));
+			addReaperNodeToContactList(deviceName);
 			updateReaperNodeContent();
 
-			const cutoff = new Date(now.getTime() - NODE_LIST_EXPIRE_MINUTES * 60000);
-			reaper_nodes_found = reaper_nodes_found.filter((n) => new Date(n.last_seen) >= cutoff);
+			const beacon_event = new CustomEvent("bus:reaper_node_received_beacon_message", {
+				bubbles: false,
+				cancelable: false,
+				detail: {
+					deviceName,
+					lat,
+					lon,
+					alt,
+					speed,
+					heading,
+					sats,
+					msgId,
+				},
+			});
+			window.bus.dispatchEvent(beacon_event);
 		}
 	}
 }

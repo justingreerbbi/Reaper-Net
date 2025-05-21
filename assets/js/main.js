@@ -287,5 +287,10 @@ window.bus.addEventListener("bus:reaper_node_received_direct_message", (message)
 	console.log("Reaper Node Direct Message:", message.detail);
 });
 
+// Listen for Reaper Node Beacon Message
+window.bus.addEventListener("bus:reaper_node_received_beacon_message", (message) => {
+	console.log("Reaper Node Beacon Message:", message.detail);
+});
+
 // @todo: Repear Incoming Group Message
 // @todo: Reaper Incoming Direct Message
