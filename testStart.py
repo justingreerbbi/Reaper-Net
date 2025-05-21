@@ -98,7 +98,7 @@ def serial_reader_thread(ser):
 # === Message Senders ===
 def send_random_messages(ser):
     while True:
-        time.sleep(120)  # Every 2 minutes
+        time.sleep(115)  # Every 2 minutes
         msg = random.choice(funny_messages)
         cmd = f"AT+MSG={msg}\r\n".encode()
         print("[Autobot] Sending funny message")
@@ -108,11 +108,13 @@ def send_direct_messages(ser):
     while True:
         time.sleep(240)  # Every 4 minutes
         print("[Autobot] Sending direct message")
-        ser.write(b"AT+DMSG=This is a direct message\r\n")
+        msg = random.choice(funny_messages)
+        cmd = f"AT+DMSG=7065|{msg}\r\n".encode()
+        ser.write(cmd)
 
 def send_beacon_messages(ser):
     while True:
-        time.sleep(60)  # Every 1 minute
+        time.sleep(38)  # Every 1 minute
         print("[Autobot] Sending Beacon Message")
         ser.write(b"AT+BEACON\r\n")
 
@@ -129,7 +131,7 @@ if __name__ == '__main__':
         print(f"Connected to Reaper Node at {port} ({name})")
         threading.Thread(target=serial_reader_thread, args=(reaper_node_serial,), daemon=True).start()
         threading.Thread(target=send_random_messages, args=(reaper_node_serial,), daemon=True).start()
-        #threading.Thread(target=send_direct_messages, args=(reaper_node_serial,), daemon=True).start()
+        threading.Thread(target=send_direct_messages, args=(reaper_node_serial,), daemon=True).start()
         threading.Thread(target=send_beacon_messages, args=(reaper_node_serial,), daemon=True).start()
 
         # Send AT+BEACON on startup
