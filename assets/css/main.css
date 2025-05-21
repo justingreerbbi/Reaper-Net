@@ -63,9 +63,11 @@ h6 {
 	outline: none !important;
 }
 
-.btn:focus, .btn:active, .btn-primary:hover {
-  outline: none !important;
-  box-shadow: none !important;
+.btn:focus,
+.btn:active,
+.btn-primary:hover {
+	outline: none !important;
+	box-shadow: none !important;
 }
 
 .btn:disabled {
@@ -199,7 +201,6 @@ h6 {
 	color: #ffffff;
 	border: 1px solid #253838; /* Darker slate gray border */
 }
-
 
 /** MARKERS **/
 .tactical-marker {
@@ -386,4 +387,35 @@ hr.short {
 
 .modal {
 	width: fit-content;
+}
+
+#group-messages-list .message-item {
+	background-color: #171717; /* Dark tactical background */
+	color: #77ef00ee; /* Tactical green text */
+	padding: 12px 14px;
+	margin-bottom: 12px;
+	border-left: 4px solid #4b5320; /* Army green accent */
+	border-radius: 0;
+	font-family: "Courier New", Courier, monospace;
+	box-shadow: 0 2px 8px rgba(34, 34, 34, 0.5);
+}
+
+#group-messages-list .message-item .node-name {
+	font-weight: bold;
+	color: #d2b48c; /* Army tan */
+	letter-spacing: 1px;
+	font-size: 14px;
+}
+
+#group-messages-list .message-item .message-content {
+	font-size: 12px;
+	color: #77ef00ee; /* Tactical green */
+	margin-top: 2px;
+}
+
+#group-messages-list .message-item .timestamp {
+	font-size: 12px;
+	color: #5c5c5c; /* Tactical gray */
+	margin-top: 4px;
+	display: block;
 }

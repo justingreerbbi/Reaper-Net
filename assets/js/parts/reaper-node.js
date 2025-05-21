@@ -131,23 +131,107 @@ function handleReaperResponse(data) {
 		return;
 	}
 
-
 	if (parts[0] === "RECV") {
 		if (parts[1] === "FRAG") {
 			// Future fragment handling here
 			return;
 		}
 
+		// Handle Group Message
+		// Example: RECV|MSG|sender|message|msgId
+		if (parts[1] === "MSG") {
+			const sender = parts[2];
+			const message = parts[3];
+			const msgId = parts[4];
+
+			const m = {
+				sender,
+				message,
+				msgId,
+				read: false,
+				timestamp: new Date().toISOString(),
+			};
+
+			// Update last_seen for the sender in reaper_nodes_found (localStorage)
+			let nodes = [];
+			const nodesStored = localStorage.getItem("reaper_nodes_found");
+			if (nodesStored) {
+				nodes = JSON.parse(nodesStored);
+			}
+			const nodeIndex = nodes.findIndex((n) => n.device_name === sender);
+			const nowIso = new Date().toISOString();
+			if (nodeIndex !== -1) {
+				nodes[nodeIndex].last_seen = nowIso;
+			} else {
+				nodes.push({
+					device_name: sender,
+					found_at: nowIso,
+					last_seen: nowIso,
+					telemetry: null,
+				});
+			}
+			localStorage.setItem("reaper_nodes_found", JSON.stringify(nodes));
+
+			let groupMessages = [];
+			const stored = localStorage.getItem("reaper_group_messages");
+			if (stored) {
+				groupMessages = JSON.parse(stored);
+			}
+			// Only add if msgId does not already exist
+			if (!groupMessages.some((msg) => msg.msgId === m.msgId)) {
+				groupMessages.push(m);
+				localStorage.setItem("reaper_group_messages", JSON.stringify(groupMessages));
+			}
+
+			window.updateGroupMessagesContent();
+
+			const received_message = new CustomEvent("bus:reaper_node_received_group_message", {
+				bubbles: false,
+				cancelable: false,
+				detail: m,
+			});
+			window.bus.dispatchEvent(received_message);
+		}
+
+		// Handle Direct Message
+		// Example: RECV|DMSG|sender|recipient|message|msgId
+		if (parts[1] === "DMSG") {
+			const sender = parts[2];
+			const recipient = parts[3];
+			const message = parts[5];
+			const msgId = parts[6];
+
+			const m = {
+				sender,
+				recipient,
+				message,
+				msgId,
+				read: false,
+				timestamp: new Date().toISOString(),
+			};
+
+			const received_direct_message = new CustomEvent("bus:reaper_node_received_direct_message", {
+				bubbles: false,
+				cancelable: false,
+				detail: m,
+			});
+			window.bus.dispatchEvent(received_direct_message);
+		}
+
+		// Handle ACK_CONFIRM
+		// Example: RECV|ACK_CONFIRM|msgId
 		if (parts[1] === "ACK_CONFIRM") {
 			const msgId = parts[2];
-			alert(`Message ${msgId} was received by a reaper node.`);
+			console.log(`Message ${msgId} was received by a reaper node.`);
 			return;
 		}
 
-		if (parts.length === 4 && parts[2].startsWith("BEACON:")) {
-			const deviceName = parts[1];
-			const [lat, lon, alt, speed, heading] = parts[2].substring(7).split(",").map(Number);
-			const msgId = parts[3];
+		// Handle Beacon
+		// Example: RECV|BEACON|deviceName|lat,lon,alt,speed,heading,sats|msgId
+		if (parts[1] === "BEACON") {
+			const deviceName = parts[2];
+			const [lat, lon, alt, speed, heading, sats] = parts[3].substring(7).split(",").map(Number);
+			const msgId = parts[4];
 			const now = new Date();
 
 			let node = reaper_nodes_found.find((n) => n.device_name === deviceName);
@@ -156,7 +240,7 @@ function handleReaperResponse(data) {
 					device_name: deviceName,
 					found_at: now.toISOString(),
 					last_seen: now.toISOString(),
-					telemetry: { lat, lon, alt, speed, heading },
+					telemetry: { lat, lon, alt, speed, heading, sats },
 				};
 				reaper_nodes_found.push(node);
 			} else {

@@ -13,6 +13,7 @@ window.map;
 window.markers = [];
 window.userLocation = null;
 window.userLocationMarker = null;
+window.updateGroupMessagesContent = updateGroupMessagesContent;
 
 // Encryption Keys for the app. This is not secure by any means on the device itself. The idea is the encrypt the data being transmitted and assumes
 // the device is secure. The keys are generated on the device and stored in localStorage.
@@ -121,6 +122,24 @@ function setupMap() {
 	});
 }
 
+function updateGroupMessagesContent() {
+	const messages = JSON.parse(localStorage.getItem("reaper_group_messages") || "[]");
+	const list = document.getElementById("group-messages-list");
+	list.innerHTML = "";
+	[...messages].reverse().forEach((msg) => {
+		const date = new Date(msg.timestamp || Date.now());
+		const formattedDate = date.toLocaleString();
+		const html = `
+				<div class="message-item">
+					<div class="node-name"><strong>Node: ${msg.sender}</strong></div>
+					<div class="mt-1 message-content">${msg.message}</div>
+					<div class="small text-secondary text-end mt-2">${formattedDate}</div>
+				</div>
+			`;
+		list.insertAdjacentHTML("beforeend", html);
+	});
+}
+
 document.addEventListener("DOMContentLoaded", () => {
 	setupMap();
 	document.querySelectorAll(".modal").forEach(makeDraggable);
@@ -189,6 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		//loadMarkers();
 		updateMemoryUsage();
 		updateReaperNodeContent();
+		updateGroupMessagesContent();
 	}
 
 	/**
@@ -255,6 +275,16 @@ window.bus.addEventListener("bus:gps_update", (gpsData) => {
 // Reaper Log from a Reaper Node
 window.bus.addEventListener("bus:log_update", (logData) => {
 	//console.log("Reaper Log:", logData.detail);
+});
+
+// Listen for Reaper Node Group Message
+window.bus.addEventListener("bus:reaper_node_received_group_message", (message) => {
+	console.log("Reaper Node Group Message:", message.detail);
+});
+
+// Listen for Reaper Node Direct Message
+window.bus.addEventListener("bus:reaper_node_received_direct_message", (message) => {
+	console.log("Reaper Node Direct Message:", message.detail);
 });
 
 // @todo: Repear Incoming Group Message
