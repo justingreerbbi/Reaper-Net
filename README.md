@@ -95,6 +95,16 @@ Planned improvements:
 
 This project favors custom communication protocols to ensure privacy and reliability.
 
+### Supported Node Commands
+
+```text
+AT+DEVICE?
+AT+MSG=YOUR MESSAGE HERE
+AT+DMSG=7065|Hello Node 7065. How are you today?
+AT+BEACON
+AT+GPS?
+```
+
 ### Nina The Reaper Hardware
 
 "Nina the Reaper" is an ESP32 MicroMod-based device with LTE, Wi-Fi, BLE, and GPS. While functional, it is costly (a few hundred dollars), making it impractical for LTE connectivity at scale.
