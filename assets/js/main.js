@@ -147,11 +147,11 @@ document.addEventListener("DOMContentLoaded", () => {
 	/**
 	 * Encryption and Decryption Example
 	 */
-	const message = "This is top secret.";
+	//const message = "This is top secret.";
 	//const secretKey = generateSecretKey();
 	//console.log("Secret Key:", secretKey);
 
-	encryptText(message, window.secretKeys.general)
+	/*encryptText(message, window.secretKeys.general)
 		.then((encrypted) => {
 			console.log("Encrypted:", encrypted);
 			return decryptText(encrypted, window.secretKeys.general);
@@ -162,6 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		.catch((err) => {
 			console.error("Error:", err);
 		});
+		*/
 
 	/**
 	 * UPDATE MEMORY USAGE

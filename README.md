@@ -31,6 +31,7 @@ While the project is not production-ready yet, it offers a glimpse into its capa
 -   Direct Text Messages.
 -   Extendable by plugins using the core API.
 -   AES256 Encryption.
+-   Team Member Tracking.
 
 ## GeoTIFF Overlay
 
