@@ -138,7 +138,7 @@ function addDirectMessageToStorage(m) {
 	// Only add if msgId does not already exist
 	if (!directMessages.some((msg) => msg.msgId === m.msgId)) {
 		directMessages.push(m);
-		localStorage.setItem("reaper_direct_messages", JSON.stringify(directMessagess));
+		localStorage.setItem("reaper_direct_messages", JSON.stringify(directMessages));
 	}
 	// @todo: Add the function to update the direct messages content.
 	//window.updateDirectMessagesContent();
