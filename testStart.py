@@ -32,16 +32,28 @@ funny_messages = [
     "Meshin’ around again, are we?",
     "HELTEC? More like HELL-TICKLED!",
     "Direct from the cloud of nonsense.",
-    "Reboot the planet!"
+    "Reboot the planet!",
+    "Packet loss? More like snack loss!",
+    "LoRa: Because WiFi was too mainstream.",
+    "Mesh networks: Where everyone’s a node-body.",
+    "Serially speaking, I’m hilarious.",
+    "I put the 'fun' in 'function call'.",
+    "My baud rate is faster than my jokes.",
+    "If you can read this, you’re too close to the antenna.",
+    "I mesh well with others.",
+    "Keep calm and transmit on.",
+    "I’m just here for the bandwidth.",
+    "Why did the packet get dropped? It couldn’t handle the pressure.",
+    "I tried to debug, but it was above my pay grade.",
+    "This node runs on coffee and code.",
+    "LoRa: Long Range, Longer Puns.",
+    "I’m not wireless, I’m just untethered.",
+    "Mesh happens.",
+    "I’m fluent in AT commands and sarcasm.",
+    "My favorite protocol is TCP-LOL.",
+    "I’m not lost, I’m just out of range.",
+    "If you’re happy and you know it, send a ping."
 ]
-
-# === Utility: Check Internet ===
-def check_internet():
-    try:
-        socket.create_connection(("8.8.8.8", 53), timeout=3)
-        return True
-    except OSError:
-        return False
 
 # === Detect and Connect to Reaper Node ===
 def auto_find_reaper_mesh_node():
@@ -76,7 +88,7 @@ def serial_reader_thread(ser):
                 if line:
                     print("[Reaper Node]", line)
                     socketio.emit('reaper_node_received', {'line': line})
-                    if line.startswith("AT+MSG") or line.startswith("AT+DMSG"):
+                    if line.startswith("AT+DMSG"):
                         ser.write(b'AT+MSG=I GOT YOU LIMIA CHARLEY\r\n')
         except Exception as e:
             print("Serial read error:", e)
@@ -98,10 +110,16 @@ def send_direct_messages(ser):
         print("[Autobot] Sending direct message")
         ser.write(b"AT+DMSG=This is a direct message\r\n")
 
+def send_beacon_messages(ser):
+    while True:
+        time.sleep(60)  # Every 1 minute
+        print("[Autobot] Sending Beacon Message")
+        ser.write(b"AT+BEACON\r\n")
+
 # === Main Entry ===
 if __name__ == '__main__':
     print("\n=========================================")
-    print(" Reaper Net - Serial Web Bridge v1.0")
+    print(" Reaper Mesh - Testing Bot v1.0")
     print("=========================================\n")
 
     devices = auto_find_reaper_mesh_node()
@@ -111,7 +129,11 @@ if __name__ == '__main__':
         print(f"Connected to Reaper Node at {port} ({name})")
         threading.Thread(target=serial_reader_thread, args=(reaper_node_serial,), daemon=True).start()
         threading.Thread(target=send_random_messages, args=(reaper_node_serial,), daemon=True).start()
-        threading.Thread(target=send_direct_messages, args=(reaper_node_serial,), daemon=True).start()
+        #threading.Thread(target=send_direct_messages, args=(reaper_node_serial,), daemon=True).start()
+        threading.Thread(target=send_beacon_messages, args=(reaper_node_serial,), daemon=True).start()
+
+        # Send AT+BEACON on startup
+        reaper_node_serial.write(b'AT+BEACON\r\n')
     else:
         print("No Reaper Mesh Node detected.")
 
