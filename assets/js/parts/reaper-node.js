@@ -475,4 +475,43 @@ export function openGroupChatModal() {
 			textarea.focus();
 		});
 	});
+
+	window.updateGroupMessagesContent = function () {
+		const groupMessages = JSON.parse(localStorage.getItem("reaper_group_messages") || "[]");
+		const modalBody = document.querySelector("#global-group-chat-modal .modal-body");
+		if (!modalBody) return;
+
+		const messagesHtml = groupMessages.length
+			? groupMessages
+				.map(
+					(msg) => `
+				<div class="group-message-item mb-3 p-2 border rounded">
+					<div class="fw-bold">${msg.device_name || "Unknown"}</div>
+					<div class="mb-1">${msg.message}</div>
+					<div class="text-muted small">${new Date(msg.timestamp).toLocaleString()}</div>
+				</div>
+			`
+				)
+				.join("")
+			: "<div class='text-center text-muted'>No messages yet.</div>";
+
+		modalBody.innerHTML = messagesHtml;
+		modalBody.scrollTop = modalBody.scrollHeight;
+	};
+
+	// Listen for new group messages and update modal if open
+	window.bus.addEventListener("bus:reaper_node_received_group_message", () => {
+		if (document.getElementById("global-group-chat-modal")) {
+			window.updateGroupMessagesContent();
+		}
+	});
+
+	// Also update after sending a message
+	document.getElementById("global-group-message-send-btn").addEventListener("click", () => {
+		setTimeout(() => {
+			if (document.getElementById("global-group-chat-modal")) {
+				window.updateGroupMessagesContent();
+			}
+		}, 200);
+	});
 }
