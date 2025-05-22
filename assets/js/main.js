@@ -108,6 +108,71 @@ function setupMap() {
 	// @todo: Add map ob click event.
 }
 
+function updateNodeMarkers() {
+	const nodes = JSON.parse(localStorage.getItem("reaper_nodes_found") || "[]");
+	const nodeMarkersMap = new Map(window.nodeMarkers.map((m) => [m.device_name, m]));
+
+	//console.log("Updating Node Markers:", nodes);
+
+	nodes.forEach((node) => {
+		const device_name = node.device_name || `Unknown Node`;
+		const latitude = node.telemetry.latitude || 0.0;
+		const longitude = node.telemetry.longitude || 0.0;
+		const speed = node.telemetry.speed || 0;
+		const altitude = node.telemetry.altitude || 0;
+		const heading = node.telemetry.heading || 0;
+		const satellites = node.telemetry.satellites || 0;
+
+		let markerObj = nodeMarkersMap.get(device_name);
+
+		if (markerObj) {
+			// Animate marker to new location
+			if (markerObj.marker.getLatLng().lat !== latitude || markerObj.marker.getLatLng().lng !== longitude) {
+				markerObj.marker.setLatLng([latitude, longitude]);
+				// Optionally, you can add a bounce or highlight animation here
+				if (markerObj.marker._icon) {
+					markerObj.marker._icon.classList.add("marker-animate");
+					setTimeout(() => markerObj.marker._icon.classList.remove("marker-animate"), 600);
+				}
+			}
+		} else {
+			// Create new marker
+			const blueTriangleIcon = L.divIcon({
+				className: "custom-blue-triangle-icon",
+				iconSize: [32, 32],
+				iconAnchor: [16, 16],
+				popupAnchor: [0, -16],
+				html: `
+					<div style="
+						width:32px;
+						height:32px;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+					">
+						<svg width="20" height="20" viewBox="0 0 20 20">
+							<polygon points="10,2 18,18 2,18" fill="#3a5f2d" stroke="#CCCCCC" stroke-width="2"/>
+						</svg>
+					</div>
+				`,
+			});
+			const marker = L.marker([latitude, longitude], { title: device_name, icon: blueTriangleIcon }).addTo(window.map);
+			marker.bindPopup(
+				`<div class="marker-popup">
+					<h4>${device_name}</h4>
+					<div>${latitude}, ${longitude}</div>
+					<div>Speed: ${speed} km/h</div>
+					<div>Altitude: ${altitude} m</div>
+					<div>Heading: ${heading}°</div>		
+					<div>Satellites: ${satellites}</div>
+				</div>`,
+				{ closeButton: false, minWidth: 200 }
+			);
+			window.nodeMarkers.push({ device_name, marker });
+		}
+	});
+}
+
 function updateGroupMessagesContent() {
 	const messages = JSON.parse(localStorage.getItem("reaper_group_messages") || "[]");
 	const list = document.getElementById("group-messages-list");
@@ -127,7 +192,6 @@ function updateGroupMessagesContent() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-
 	// Load the map and set the view to the startup location.
 	setupMap();
 

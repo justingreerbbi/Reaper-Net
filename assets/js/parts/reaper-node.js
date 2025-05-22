@@ -111,7 +111,9 @@ function addReaperNodeToContactList(node) {
 	if (nodeIndex !== -1) {
 		// Update existing node
 		nodes[nodeIndex].last_seen = nowIso;
-		nodes[nodeIndex].telemetry = telemetry;
+		if (telemetry) {
+			nodes[nodeIndex].telemetry = telemetry;
+		}
 	} else {
 		// Add new node
 		nodes.push({
@@ -398,7 +400,7 @@ export function loadReaperNodeState() {
 
 /**
  * Open Group Chat Modal
- * 
+ *
  * This simply opens a large modal with a list of group messages.
  * @todo: Add quick message sending.
  */
@@ -406,32 +408,21 @@ export function openGroupChatModal() {
 	const groupMessages = JSON.parse(localStorage.getItem("reaper_group_messages") || "[]");
 	const messagesHtml = groupMessages.length
 		? groupMessages
-			.map(
-				(msg) => `
+				.map(
+					(msg) => `
 			<div class="group-message-item mb-3 p-2 border rounded">
 				<div class="fw-bold">${msg.device_name || "Unknown"}</div>
 				<div class="mb-1">${msg.message}</div>
 				<div class="text-muted small">${new Date(msg.timestamp).toLocaleString()}</div>
 			</div>
 		`
-			)
-			.join("")
+				)
+				.join("")
 		: "<div class='text-center text-muted'>No messages yet.</div>";
 
-	const quickReplies = [
-		"Roger that.",
-		"Copy.",
-		"Need assistance.",
-		"All clear.",
-		"Moving to location.",
-	];
+	const quickReplies = ["Roger that.", "Copy.", "Need assistance.", "All clear.", "Moving to location."];
 
-	const quickRepliesHtml = quickReplies
-		.map(
-			(q) =>
-				`<button type="button" class="btn btn-outline-secondary btn-sm me-2 mb-2 quick-reply-btn">${q}</button>`
-		)
-		.join("");
+	const quickRepliesHtml = quickReplies.map((q) => `<button type="button" class="btn btn-outline-secondary btn-sm me-2 mb-2 quick-reply-btn">${q}</button>`).join("");
 
 	const modalHtml = `
 		<div class="modal fade" id="global-group-chat-modal" tabindex="-1" aria-labelledby="global-group-chat-modal-label">
@@ -459,20 +450,18 @@ export function openGroupChatModal() {
 	makeDraggable(document.getElementById("global-group-chat-modal"), document.querySelector(".drag-selector"));
 	modal.show();
 
-	document
-		.getElementById("global-group-message-send-btn")
-		.addEventListener("click", () => {
-			const textarea = document.getElementById("global-group-message-textarea");
-			const message = textarea.value.trim();
-			if (message) {
-				reaperNodeSocket.emit("send_reaper_node_command", { command: "AT+MSG=" + message });
-				textarea.value = "";
-				//modal.hide();
-				//document.getElementById("global-group-chat-modal").remove();
-			} else {
-				alert("Please enter a message.");
-			}
-		});
+	document.getElementById("global-group-message-send-btn").addEventListener("click", () => {
+		const textarea = document.getElementById("global-group-message-textarea");
+		const message = textarea.value.trim();
+		if (message) {
+			reaperNodeSocket.emit("send_reaper_node_command", { command: "AT+MSG=" + message });
+			textarea.value = "";
+			//modal.hide();
+			//document.getElementById("global-group-chat-modal").remove();
+		} else {
+			alert("Please enter a message.");
+		}
+	});
 
 	document.querySelectorAll(".quick-reply-btn").forEach((btn) => {
 		btn.addEventListener("click", () => {

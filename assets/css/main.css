@@ -272,6 +272,17 @@ button:focus:active {
 	z-index: 1;
 }
 
+/* === MAP OVERRIDES === */
+.leaflet-popup-content-wrapper {
+	border-radius: 0 !important;
+	background-color: #181818 !important;
+	color: #d2b48c !important;
+	border: 1px solid #39452e !important;
+	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.9) !important;
+	font-family: "OCR A Extended", "Courier New", Courier, monospace !important;
+	font-size: 13px !important;
+}
+
 /* === TOOLBAR === */
 #toolbar {
 	position: absolute;
