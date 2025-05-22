@@ -1,7 +1,7 @@
 // main.js (Modular version)
 import { getSetting, updateSetting, watchSetting } from "./parts/settings.js";
 import { makeDraggable } from "./parts/helpers.js";
-import { startReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket, openGroupChatModal, sendCommandToReaperNode } from "./parts/reaper-node.js";
+import { startReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket, openGlobalChatWindow } from "./parts/reaper-node.js";
 import { showPopupNotification } from "./parts/notifications.js";
 import { updateUserLocation, updateUserLocationOnMap, setFollowUserLocation, toggleFollowUserLocation, isFollowingUserLocation } from "./parts/map.js";
 
@@ -214,7 +214,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// OPEN GLOBAL MESSAGES MODAL CHAT WINDOW.
 	document.getElementById("open-global-messager-btn").addEventListener("click", () => {
-		openGroupChatModal();
+		openGlobalChatWindow();
 	});
 
 	// SEND REAPER COMMAND BTN LISTENER.
@@ -354,7 +354,8 @@ window.bus.addEventListener("bus:reaper_node_received_direct_message", (message)
 });
 
 // Listen for Reaper Node Beacon Message
-window.bus.addEventListener("bus:reaper_node_received_beacon_message", (message) => {
+window.bus.addEventListener("bus:reaper_node_received_beacon", (message) => {
+	//console.log("Beacon Message:", message.detail);
 	updateNodeMarkers(); // Update the node markers on the map.
 });
 
