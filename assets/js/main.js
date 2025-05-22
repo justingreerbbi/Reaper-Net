@@ -127,7 +127,10 @@ function updateGroupMessagesContent() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+
+	// Load the map and set the view to the startup location.
 	setupMap();
+
 	document.querySelectorAll(".modal").forEach(makeDraggable);
 	document.querySelectorAll(".modal").forEach((modal) => {
 		modal.addEventListener("mousedown", () => {
@@ -243,7 +246,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// Set a watcher on the status_update_interval setting
 	watchSetting("status_update_interval", (newVal) => {
-		//console.log("🔄 status_update_interval changed:", newVal);
 		startPolling();
 	});
 
@@ -260,7 +262,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Reaper GPS Update
 window.bus.addEventListener("bus:gps_update", (gpsData) => {
-	//console.log("GPS Update:", gpsData.detail);
 	updateUserLocation(gpsData.detail);
 	updateUserLocationOnMap();
 });
@@ -272,7 +273,6 @@ window.bus.addEventListener("bus:log_update", (logData) => {
 
 // Listen for Reaper Node Group Message
 window.bus.addEventListener("bus:reaper_node_received_group_message", (message) => {
-	//console.log("Reaper Node Group Message:", message.detail);
 	if (appSettings.showNewGroupMessagePopup) {
 		showPopupNotification("New Group Message", message.detail.device_name + "<br/>" + message.detail.message);
 	}
@@ -280,7 +280,6 @@ window.bus.addEventListener("bus:reaper_node_received_group_message", (message) 
 
 // Listen for Reaper Node Direct Message
 window.bus.addEventListener("bus:reaper_node_received_direct_message", (message) => {
-	//console.log("Reaper Node Direct Message:", message.detail);
 	if (appSettings.showNewDirectMessagePopup) {
 		showPopupNotification("New Direct Message", message.detail.device_name + "<br/>" + message.detail.message);
 	}
@@ -293,7 +292,6 @@ window.bus.addEventListener("bus:reaper_node_received_beacon_message", (message)
 
 // Listen for Reaper Node Command Send
 window.bus.addEventListener("bus:send_reaper_command", (cmd) => {
-	//console.log("Reaper Node Command:", cmd.detail);
 	if (reaperNodeSocket) {
 		sendCommandToReaperNode(cmd.detail);
 	} else {
