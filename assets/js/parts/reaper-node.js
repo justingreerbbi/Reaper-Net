@@ -85,24 +85,43 @@ export function createReaperGroupMessageWindow() {
  * Add a Reaper Node to the contact list
  * @param {*} deviceName
  */
-function addReaperNodeToContactList(deviceName) {
+function addReaperNodeToContactList(node) {
+	//console.log("Adding Reaper Node to contact list:", node);
 	let nodes = [];
+	let telemetry = null;
 	const nodesStored = localStorage.getItem("reaper_nodes_found");
 	if (nodesStored) {
 		nodes = JSON.parse(nodesStored);
 	}
-	const nodeIndex = nodes.findIndex((n) => n.device_name === deviceName);
+	const nodeIndex = nodes.findIndex((n) => n.device_name === node.device_name);
 	const nowIso = new Date().toISOString();
+
+	if (node.telemetry) {
+		telemetry = {
+			latitude: node.telemetry.latitude,
+			longitude: node.telemetry.longitude,
+			altitude: node.telemetry.altitude,
+			speed: node.telemetry.speed,
+			heading: node.telemetry.heading,
+			satellites: node.telemetry.satellites,
+		};
+	}
+
 	if (nodeIndex !== -1) {
+		// Update existing node
 		nodes[nodeIndex].last_seen = nowIso;
+		nodes[nodeIndex].telemetry = telemetry;
 	} else {
+		// Add new node
 		nodes.push({
-			device_name: sender,
+			device_name: node.device_name,
 			found_at: nowIso,
 			last_seen: nowIso,
-			telemetry: null,
+			telemetry: telemetry,
 		});
 	}
+
+	// Update the node list in local storage
 	localStorage.setItem("reaper_nodes_found", JSON.stringify(nodes));
 }
 
@@ -203,19 +222,19 @@ function handleReaperResponse(data) {
 		// Handle Group Message
 		// Example: RECV|MSG|sender|message|msgId
 		if (parts[1] === "MSG") {
-			const sender = parts[2];
+			const deviceName = parts[2];
 			const message = parts[3];
 			const msgId = parts[4];
 
 			const m = {
-				sender,
-				message,
-				msgId,
+				device_name: deviceName,
+				message: message,
+				msgId: msgId,
 				read: false,
 				timestamp: new Date().toISOString(),
 			};
 
-			addReaperNodeToContactList(sender);
+			addReaperNodeToContactList(m);
 			addGroupMessageToStorage(m);
 
 			const received_message = new CustomEvent("bus:reaper_node_received_group_message", {
@@ -230,21 +249,21 @@ function handleReaperResponse(data) {
 		// Example: RECV|DMSG|sender|recipient|message|msgId
 		if (parts[1] === "DMSG") {
 			//console.log('Direct Message Received', parts);
-			const sender = parts[2];
+			const deviceName = parts[2];
 			const recipient = parts[3];
 			const message = parts[4];
 			const msgId = parts[5];
 
 			const m = {
-				sender,
-				recipient,
-				message,
-				msgId,
+				device_name: deviceName,
+				recipient: recipient,
+				message: message,
+				msgId: msgId,
 				read: false,
 				timestamp: new Date().toISOString(),
 			};
 
-			addReaperNodeToContactList(sender);
+			addReaperNodeToContactList(m);
 			addDirectMessageToStorage(m);
 
 			const received_direct_message = new CustomEvent("bus:reaper_node_received_direct_message", {
@@ -264,41 +283,47 @@ function handleReaperResponse(data) {
 		}
 
 		// Handle Beacon
-		// Example: RECV|BEACON|deviceName|lat,lon,alt,speed,heading,sats|msgId
+		// Example: RECV|BEACON|deviceName|lat,lng,alt,speed,heading,sats|msgId
 		if (parts[1] === "BEACON") {
 			const deviceName = parts[2];
-			const [lat, lon, alt, speed, heading, sats] = parts[3].substring(7).split(",").map(Number);
+			const lat = parseFloat(parts[3].split(",")[0]);
+			const lng = parseFloat(parts[3].split(",")[1]);
+			const alt = parseFloat(parts[3].split(",")[2]);
+			const speed = parseFloat(parts[3].split(",")[3]);
+			const heading = parseFloat(parts[3].split(",")[4]);
+			const sats = parseInt(parts[3].split(",")[5], 10);
 			const msgId = parts[4];
 			const now = new Date();
 
-			let node = reaper_nodes_found.find((n) => n.device_name === deviceName);
-			if (!node) {
-				node = {
-					device_name: deviceName,
-					found_at: now.toISOString(),
-					last_seen: now.toISOString(),
-					telemetry: { lat, lon, alt, speed, heading, sats },
-				};
-				reaper_nodes_found.push(node);
-			} else {
-				node.last_seen = now.toISOString();
-			}
+			const m = {
+				device_name: deviceName,
+				found_at: now.toISOString(),
+				last_seen: now.toISOString(),
+				telemetry: {
+					latitude: lat,
+					longitude: lng,
+					altitude: alt,
+					speed: speed,
+					heading: heading,
+					satellites: sats,
+				},
+			};
 
-			addReaperNodeToContactList(deviceName);
+			addReaperNodeToContactList(m);
 			updateReaperNodeContent();
 
 			const beacon_event = new CustomEvent("bus:reaper_node_received_beacon_message", {
 				bubbles: false,
 				cancelable: false,
 				detail: {
-					deviceName,
-					lat,
-					lon,
-					alt,
-					speed,
-					heading,
-					sats,
-					msgId,
+					device_name: deviceName,
+					lat: lat,
+					lng: lng,
+					alt: alt,
+					speed: speed,
+					heading: heading,
+					sats: sats,
+					msgId: msgId,
 				},
 			});
 			window.bus.dispatchEvent(beacon_event);
@@ -332,7 +357,7 @@ export function updateReaperNodeContent() {
 				<div class="node-list-item">
 					<div class="node-name light-text">CALLSIGN: ${node.device_name.toUpperCase()}</div>
 					<div class="node-list-item-sub">
-						<div class="node-telemetry">${node.telemetry ? `Lat: ${node.telemetry.lat}, Lon: ${node.telemetry.lon}` : "No GPS Data"}</div>
+						<div class="node-telemetry">${node.telemetry ? `${node.telemetry.latitude}, ${node.telemetry.longitude}` : "No GPS Data"}</div>
 						<div class="first-seen"><strong>First Contact:</strong> <br/>${foundAt}</div>
 						<div class="last-seen"><strong>Last Seen:</strong> <br/>${lastCheckIn}</div>
 					</div>

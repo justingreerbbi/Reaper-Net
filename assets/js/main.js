@@ -43,6 +43,8 @@ let status = {
 let appSettings = {
 	startupMapCenter: [41.0128, -81.6054],
 	startupMapZoom: 10,
+	showNewGroupMessagePopup: true,
+	showNewDirectMessagePopup: true,
 };
 
 function getServerStatusAndUpdate() {
@@ -115,7 +117,7 @@ function updateGroupMessagesContent() {
 		const formattedDate = date.toLocaleString();
 		const html = `
 				<div class="message-item">
-					<div class="node-name"><strong>Node: ${msg.sender}</strong></div>
+					<div class="node-name"><strong>Node: ${msg.device_name}</strong></div>
 					<div class="mt-1 message-content">${msg.message}</div>
 					<div class="small text-secondary text-end mt-2">${formattedDate}</div>
 				</div>
@@ -256,14 +258,18 @@ window.bus.addEventListener("bus:log_update", (logData) => {
 
 // Listen for Reaper Node Group Message
 window.bus.addEventListener("bus:reaper_node_received_group_message", (message) => {
-	showPopupNotification("New Group Message", message.detail.message);
 	//console.log("Reaper Node Group Message:", message.detail);
+	if (appSettings.showNewGroupMessagePopup) {
+		showPopupNotification("New Group Message", message.detail.device_name + "<br/>" + message.detail.message);
+	}
 });
 
 // Listen for Reaper Node Direct Message
 window.bus.addEventListener("bus:reaper_node_received_direct_message", (message) => {
 	//console.log("Reaper Node Direct Message:", message.detail);
-	showPopupNotification("New Direct Message", message.detail.message);
+	if (appSettings.showNewDirectMessagePopup) {
+		showPopupNotification("New Direct Message", message.detail.device_name + "<br/>" + message.detail.message);
+	}
 });
 
 // Listen for Reaper Node Beacon Message
