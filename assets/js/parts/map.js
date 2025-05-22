@@ -50,7 +50,7 @@ export function updateUserLocation(data) {
 	for (const field of requiredFields) {
 		if (data[field] === undefined || data[field] === null) {
 			console.error(`Missing user location field: ${field}`);
-			reject(new Error(`Missing user location field: ${field}`));
+			//reject(new Error(`Missing user location field: ${field}`));
 			return;
 		}
 	}
