@@ -2,8 +2,9 @@
 import { getSetting, updateSetting, watchSetting } from "./parts/settings.js";
 import { makeDraggable } from "./parts/helpers.js";
 import { startReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket, createReaperGroupMessageWindow } from "./parts/reaper-node.js";
-import { listPlugins, getPlugin } from "./parts/pluginManager.js";
-import { encryptText, decryptText, generateSecretKey } from "./parts/crypto.js";
+import { showPopupNotification } from "./parts/notifications.js";
+//import { listPlugins, getPlugin } from "./parts/pluginManager.js";
+//import { encryptText, decryptText, generateSecretKey } from "./parts/crypto.js";
 import { updateUserLocation, updateUserLocationOnMap, setFollowUserLocation, toggleFollowUserLocation, isFollowingUserLocation } from "./parts/map.js";
 
 // A simple lightweight event bus for communication between components.
@@ -38,6 +39,12 @@ let status = {
 	frontendVersion: "0.0.0",
 };
 
+// @todo: We need to check if the app settings exist and if not, create them.
+let appSettings = {
+	startupMapCenter: [41.0128, -81.6054],
+	startupMapZoom: 10,
+};
+
 function getServerStatusAndUpdate() {
 	fetch("/api/status")
 		.then((res) => res.json())
@@ -70,56 +77,33 @@ function getServerStatusAndUpdate() {
 }
 
 function setupMap() {
-	window.map = L.map("map").setView([41.0128, -81.6054], 10);
-	L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+	// Initialize the map and set the view to the startup location.
+	window.map = L.map("map").setView(appSettings.startupMapCenter, appSettings.startupMapZoom);
+
+	// Check if the there is a last known location in localStorage and set the map view to that location.
+	const last_known_gps_data = JSON.parse(localStorage.getItem("last_gps_data"));
+	if (last_known_gps_data) {
+		updateUserLocation(last_known_gps_data);
+		updateUserLocationOnMap();
+	}
+
+	// Set the base map layer.
+	L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+		//L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
 		minZoom: 6,
 		maxZoom: 19,
-		attribution: 'Map data © <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+		attribution: 'Map data © <a href="https://www.cartocdn.com/">cartocdn</a> contributors',
 	}).addTo(map);
 
 	// When the map is dragged, stop following the user location.
 	window.map.on("dragstart", () => {
 		if (isFollowingUserLocation) {
 			setFollowUserLocation(false);
+			showPopupNotification("Static Location", "You are no longer following your location.");
 		}
 	});
 
-	window.map.on("asdasd", (e) => {
-		const lat = e.latlng.lat.toFixed(5);
-		const lng = e.latlng.lng.toFixed(5);
-		const modalHtml = `
-      <div id="map-modal" class="modal" style="display:block;background:rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title">Add Marker</h5></div>
-            <div class="modal-body">
-              <p>Coordinates: <span>${lat},${lng}</span></p>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-primary" id="save-marker-btn">Save Marker</button>
-              <button type="button" class="btn btn-secondary" onclick="document.getElementById('map-modal').remove();">Close</button>
-            </div>
-          </div>
-        </div>
-      </div>`;
-		document.body.insertAdjacentHTML("beforeend", modalHtml);
-		document.getElementById("save-marker-btn").onclick = () => {
-			fetch("/api/save_marker", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ latitude: lat, longitude: lng }),
-			})
-				.then(() => {
-					console.log("Marker saved successfully");
-					document.getElementById("map-modal").remove();
-					loadMarkers();
-				})
-				.catch((error) => {
-					console.error("Error saving marker:", error);
-					alert("Failed to save marker.");
-				});
-		};
-	});
+	// @todo: Add map ob click event.
 }
 
 function updateGroupMessagesContent() {
@@ -153,11 +137,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			modal.style.zIndex = maxZ + 1;
 		});
 	});
-
-	//document.getElementById("send-group-message-btn").addEventListener("click", () => {
-	//	console.log("Send Group Message button clicked");
-	//	createReaperGroupMessageWindow();
-	//});
 
 	document.getElementById("center-on-location-btn").addEventListener("click", () => {
 		toggleFollowUserLocation();
@@ -205,7 +184,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	 */
 	function fetchUpdates() {
 		getServerStatusAndUpdate();
-		//loadMarkers();
 		updateMemoryUsage();
 		updateReaperNodeContent();
 		updateGroupMessagesContent();
@@ -267,9 +245,8 @@ document.addEventListener("DOMContentLoaded", () => {
 // Reaper GPS Update
 window.bus.addEventListener("bus:gps_update", (gpsData) => {
 	//console.log("GPS Update:", gpsData.detail);
-	updateUserLocation(gpsData.detail).then(() => {
-		updateUserLocationOnMap();
-	});
+	updateUserLocation(gpsData.detail);
+	updateUserLocationOnMap();
 });
 
 // Reaper Log from a Reaper Node
@@ -279,12 +256,14 @@ window.bus.addEventListener("bus:log_update", (logData) => {
 
 // Listen for Reaper Node Group Message
 window.bus.addEventListener("bus:reaper_node_received_group_message", (message) => {
-	console.log("Reaper Node Group Message:", message.detail);
+	showPopupNotification("New Group Message", message.detail.message);
+	//console.log("Reaper Node Group Message:", message.detail);
 });
 
 // Listen for Reaper Node Direct Message
 window.bus.addEventListener("bus:reaper_node_received_direct_message", (message) => {
-	console.log("Reaper Node Direct Message:", message.detail);
+	//console.log("Reaper Node Direct Message:", message.detail);
+	showPopupNotification("New Direct Message", message.detail.message);
 });
 
 // Listen for Reaper Node Beacon Message

@@ -22,7 +22,7 @@ function ensureContainer() {
 	return container;
 }
 
-export function createInfoModal(title, body) {
+export function showPopupNotification(title, body) {
 	const container = ensureContainer();
 	const modal = document.createElement("div");
 	modal.style.background = "#222";
