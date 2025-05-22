@@ -8,7 +8,34 @@ let reaper_nodes_found = [];
 const NODE_LIST_EXPIRE_MINUTES = 10;
 const LINE_HISTORY_EXPIRE_MINUTES = 30;
 
+// Contains the Reaper Node socket connection.
 export let reaperNodeSocket = null;
+
+// During a messgae being sent and waiting for a response, this will be true.
+// After a message is sent, we should see a SEND|FAILED|<msgId> message or SEND|ACK_CONFIRM|<msgId> message.
+// If we see a SEND|FAILED|<msgId> message, we should set isSendingMessage to false.
+// If we see a SEND|ACK_CONFIRM|<msgId> message, we should set isSendingMessage to false and set sendingMessageMsgId to null.
+export let isSendingMessage = false;
+
+// The message ID of the message being sent. We get this from the Reaper node. 
+// Once we send the message to the node, the first SEND|ATTEMPT|<msgId>|<seq>/<total_seq>|try=<attempt_number> we get back will contain the message ID.
+// This msgID is then used to track the message status and we can use it to check if the message was received by the node byt listening to the RECV|ACK_CONFIRM|<msgId> message.
+export let sendingMessageMsgId = null;
+
+/**
+ * Local storage message objects will be structured like this:
+ * 
+ * {
+ * 	type: "sent" | "received" | "failed",
+ * 	direction: "sent" | "received",
+ * 	device_name: "deviceName",
+ *  recipient: "recipient",
+ * 	message: "message",
+ * 	msgId: "msgId",
+ *  read: false,
+ *  timestamp: "timestamp",
+ * }
+ */
 
 /**
  * Initialize the Reaper Node Socket
@@ -34,6 +61,24 @@ export function startReaperNodeSocket() {
 	});
 }
 
+/**
+ * Send a global message to all Reaper Nodes.
+ * @param {string} message - The message to send.
+ */
+export function sendGlobalMessage(message) { }
+
+/**
+ * Send a direct message to the specified Reaper Node.
+ * @param {string} deviceName - The name of the device to send the message to.
+ * @param {string} message - The message to send.
+ */
+export function sendDirectMessage(deviceName, message) { }
+
+/**
+ * Send a command to the Reaper Node.
+ * @param {string} command - The command to send.
+ * @returns {void}
+ */
 export function sendCommandToReaperNode(command) {
 	if (!command) {
 		if (reaper_log) reaper_log.textContent += "No command entered.\n";
@@ -41,45 +86,6 @@ export function sendCommandToReaperNode(command) {
 	}
 	reaperNodeSocket.emit("send_reaper_node_command", { command });
 	//console.log("Command sent:", command);
-}
-
-export function createReaperGroupMessageWindow() {
-	const modalHtml = `
-		<div class="modal fade" id="reaper-group-message-modal" tabindex="-1" aria-labelledby="reaper-group-message-modal-label" inert>
-			<div class="modal-dialog modal-lg">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h5 class="modal-title" id="reaper-group-message-modal-label">Reaper Group Message</h5>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-					</div>
-					<div class="modal-body">
-						<textarea id="reaper-group-message-textarea" rows="10" style="width: 100%;"></textarea>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-						<button type="button" class="btn btn-primary" id="send-reaper-group-message-btn">Send</button>
-					</div>
-				</div>
-			</div>
-		</div>
-	`;
-
-	document.body.insertAdjacentHTML("beforeend", modalHtml);
-	const modal = new bootstrap.Modal(document.getElementById("reaper-group-message-modal"));
-	const sendButton = document.getElementById("send-reaper-group-message-btn");
-
-	sendButton.addEventListener("click", () => {
-		const message = document.getElementById("reaper-group-message-textarea").value;
-		if (message) {
-			reaperNodeSocket.emit("send_reaper_node_command", { command: "AT+MSG=" + message });
-			alert("Message sent to Reaper group.");
-			document.getElementById("reaper-group-message-modal").remove();
-			modal.hide();
-		} else {
-			alert("Please enter a message.");
-		}
-	});
-	modal.show();
 }
 
 /**
@@ -134,14 +140,14 @@ function addReaperNodeToContactList(node) {
  */
 function addGroupMessageToStorage(m) {
 	let groupMessages = [];
-	const stored = localStorage.getItem("reaper_group_messages");
+	const stored = localStorage.getItem("reaper_global_messages");
 	if (stored) {
 		groupMessages = JSON.parse(stored);
 	}
 	// Only add if msgId does not already exist
 	if (!groupMessages.some((msg) => msg.msgId === m.msgId)) {
 		groupMessages.push(m);
-		localStorage.setItem("reaper_group_messages", JSON.stringify(groupMessages));
+		localStorage.setItem("reaper_global_messages", JSON.stringify(groupMessages));
 	}
 
 	window.updateGroupMessagesContent();
@@ -245,7 +251,7 @@ function handleReaperResponse(data) {
 			addReaperNodeToContactList(m);
 			addGroupMessageToStorage(m);
 
-			const received_message = new CustomEvent("bus:reaper_node_received_group_message", {
+			const received_message = new CustomEvent("bus:reaper_node_received_gloabl_message", {
 				bubbles: false,
 				cancelable: false,
 				detail: m,
@@ -410,7 +416,7 @@ export function loadReaperNodeState() {
  * @todo: Add quick message sending.
  */
 export function openGroupChatModal() {
-	const groupMessages = JSON.parse(localStorage.getItem("reaper_group_messages") || "[]");
+	const groupMessages = JSON.parse(localStorage.getItem("reaper_global_messages") || "[]");
 	const messagesHtml = groupMessages.length
 		? groupMessages
 			.map(
@@ -477,7 +483,7 @@ export function openGroupChatModal() {
 	});
 
 	window.updateGroupMessagesContent = function () {
-		const groupMessages = JSON.parse(localStorage.getItem("reaper_group_messages") || "[]");
+		const groupMessages = JSON.parse(localStorage.getItem("reaper_global_messages") || "[]");
 		const modalBody = document.querySelector("#global-group-chat-modal .modal-body");
 		if (!modalBody) return;
 
@@ -500,7 +506,7 @@ export function openGroupChatModal() {
 	};
 
 	// Listen for new group messages and update modal if open
-	window.bus.addEventListener("bus:reaper_node_received_group_message", () => {
+	window.bus.addEventListener("bus:reaper_node_received_global_message", () => {
 		if (document.getElementById("global-group-chat-modal")) {
 			window.updateGroupMessagesContent();
 		}

@@ -3,9 +3,7 @@ import { getSetting, updateSetting, watchSetting } from "./parts/settings.js";
 import { makeDraggable } from "./parts/helpers.js";
 import { startReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket, openGroupChatModal, sendCommandToReaperNode } from "./parts/reaper-node.js";
 import { showPopupNotification } from "./parts/notifications.js";
-//import { listPlugins, getPlugin } from "./parts/pluginManager.js";
-//import { encryptText, decryptText, generateSecretKey } from "./parts/crypto.js";
-import { updateUserLocation, updateUserLocationOnMap, setFollowUserLocation, toggleFollowUserLocation, isFollowingUserLocation, centerMapOnUserLocation } from "./parts/map.js";
+import { updateUserLocation, updateUserLocationOnMap, setFollowUserLocation, toggleFollowUserLocation, isFollowingUserLocation } from "./parts/map.js";
 
 // A simple lightweight event bus for communication between components.
 window.bus = new EventTarget();
@@ -14,7 +12,6 @@ window.map;
 window.markers = [];
 window.userLocation = null;
 window.userLocationMarker = null;
-window.updateGroupMessagesContent = updateGroupMessagesContent;
 window.nodeMarkers = [];
 
 // Encryption Keys for the app. This is not secure by any means on the device itself. The idea is the encrypt the data being transmitted and assumes
@@ -79,6 +76,13 @@ function getServerStatusAndUpdate() {
 		.catch((error) => console.error("Error fetching status:", error));
 }
 
+/**
+ * Setup the Map
+ * 
+ * This function initializes the map and sets the view to the startup location.
+ * Right now it also as map listeners as well. I am not sure if we want to keep this here or move it to a different file.
+ * We will have to look into this later.
+ */
 function setupMap() {
 	// Initialize the map and set the view to the startup location.
 	window.map = L.map("map").setView(appSettings.startupMapCenter, appSettings.startupMapZoom);
@@ -109,6 +113,13 @@ function setupMap() {
 	// @todo: Add map ob click event.
 }
 
+/**
+ * Update all the node markers on the map.
+ * 
+ * This function will check if the node already exists on the map and update its location.
+ * If the node does not exist, it will create a new marker for the node.
+ * If it does exist, it will update the marker's location.
+ */
 function updateNodeMarkers() {
 	const nodes = JSON.parse(localStorage.getItem("reaper_nodes_found") || "[]");
 	const nodeMarkersMap = new Map(window.nodeMarkers.map((m) => [m.device_name, m]));
@@ -174,28 +185,16 @@ function updateNodeMarkers() {
 	});
 }
 
-function updateGroupMessagesContent() {
-	const messages = JSON.parse(localStorage.getItem("reaper_group_messages") || "[]");
-	const list = document.getElementById("group-messages-list");
-	list.innerHTML = "";
-	[...messages].reverse().forEach((msg) => {
-		const date = new Date(msg.timestamp || Date.now());
-		const formattedDate = date.toLocaleString();
-		const html = `
-				<div class="message-item">
-					<div class="node-name"><strong>Node: ${msg.device_name}</strong></div>
-					<div class="mt-1 message-content">${msg.message}</div>
-					<div class="small text-secondary text-end mt-2">${formattedDate}</div>
-				</div>
-			`;
-		list.insertAdjacentHTML("beforeend", html);
-	});
-}
-
+/**
+ * Document ready event listener
+ * This function is called when the DOM is fully loaded.
+ */
 document.addEventListener("DOMContentLoaded", () => {
 	// Load the map and set the view to the startup location.
 	setupMap();
 
+	// This is a little bit of a hack and will be removed later.
+	// All modals will be handled by their respect module eventually and they will also handle tif somethign is draggable.
 	document.querySelectorAll(".modal").forEach(makeDraggable);
 	document.querySelectorAll(".modal").forEach((modal) => {
 		modal.addEventListener("mousedown", () => {
@@ -218,6 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		openGroupChatModal();
 	});
 
+	// SEND REAPER COMMAND BTN LISTENER.
 	document.getElementById("send-reaper-cmd-btn").addEventListener("click", () => {
 		const cmd = document.getElementById("reaper-cmd-input").value;
 		if (cmd) {
@@ -270,7 +270,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		getServerStatusAndUpdate();
 		updateMemoryUsage();
 		updateReaperNodeContent();
-		updateGroupMessagesContent();
 		updateNodeMarkers();
 	}
 
@@ -298,10 +297,11 @@ document.addEventListener("DOMContentLoaded", () => {
 				pluginsLoaded = true;
 			});
 	}
-	loadPlugins();
+	//loadPlugins(); // Uncomment this line to start loading plugins.
 
 	/**
 	 * START POLLING / TIMER
+	 * This is just testing a watcher, we may be able to remove this due to the way we handle events now. This is just a test for now.
 	 */
 	function startPolling() {
 		if (systemTimer) clearInterval(systemTimer);
@@ -316,6 +316,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	});
 
 	startPolling();
+
+	// Fetch the initial updates ftom the server.
 	fetchUpdates();
 });
 
@@ -338,9 +340,9 @@ window.bus.addEventListener("bus:log_update", (logData) => {
 });
 
 // Listen for Reaper Node Group Message
-window.bus.addEventListener("bus:reaper_node_received_group_message", (message) => {
+window.bus.addEventListener("bus:reaper_node_received_global_message", (message) => {
 	if (appSettings.showNewGroupMessagePopup) {
-		showPopupNotification("New Group Message", message.detail.device_name + "<br/>" + message.detail.message);
+		showPopupNotification("New Global Message", message.detail.device_name + "<br/>" + message.detail.message);
 	}
 });
 
@@ -363,4 +365,14 @@ window.bus.addEventListener("bus:send_reaper_command", (cmd) => {
 	} else {
 		console.error("Reaper Node Socket is not connected.");
 	}
+});
+
+// Listen for a Reaper Node sending a global message
+window.bus.addEventListener("bus:reaper_node_send_gloabl_message", (msg) => {
+
+});
+
+// Listen for a Reaper Node sending a direct message
+window.bus.addEventListener("bus:reaper_node_send_direct_message", (msg) => {
+	//console.log("Direct Message:", msg.detail);
 });
