@@ -1,3 +1,5 @@
+import { makeDraggable } from "./helpers.js";
+
 // === Reaper Node State ===
 let reaper_log = null;
 let reaper_node_lines = [];
@@ -38,8 +40,7 @@ export function sendCommandToReaperNode(command) {
 		return;
 	}
 	reaperNodeSocket.emit("send_reaper_node_command", { command });
-	console.log("Command sent:", command);
-	document.getElementById("reaper-cmd-input").value = "";
+	//console.log("Command sent:", command);
 }
 
 export function createReaperGroupMessageWindow() {
@@ -389,4 +390,95 @@ export function loadReaperNodeState() {
 
 	localStorage.setItem("reaper_nodes_found", JSON.stringify(reaper_nodes_found));
 	localStorage.setItem("reaper_node_lines", JSON.stringify(reaper_node_lines));
+}
+
+/**
+ * MESSENGER FUNCTIONS FOR COMMUNICATING
+ */
+
+/**
+ * Open Group Chat Modal
+ * 
+ * This simply opens a large modal with a list of group messages.
+ * @todo: Add quick message sending.
+ */
+export function openGroupChatModal() {
+	const groupMessages = JSON.parse(localStorage.getItem("reaper_group_messages") || "[]");
+	const messagesHtml = groupMessages.length
+		? groupMessages
+			.map(
+				(msg) => `
+			<div class="group-message-item mb-3 p-2 border rounded">
+				<div class="fw-bold">${msg.device_name || "Unknown"}</div>
+				<div class="mb-1">${msg.message}</div>
+				<div class="text-muted small">${new Date(msg.timestamp).toLocaleString()}</div>
+			</div>
+		`
+			)
+			.join("")
+		: "<div class='text-center text-muted'>No messages yet.</div>";
+
+	const quickReplies = [
+		"Roger that.",
+		"Copy.",
+		"Need assistance.",
+		"All clear.",
+		"Moving to location.",
+	];
+
+	const quickRepliesHtml = quickReplies
+		.map(
+			(q) =>
+				`<button type="button" class="btn btn-outline-secondary btn-sm me-2 mb-2 quick-reply-btn">${q}</button>`
+		)
+		.join("");
+
+	const modalHtml = `
+		<div class="modal fade" id="global-group-chat-modal" tabindex="-1" aria-labelledby="global-group-chat-modal-label">
+			<div class="modal-dialog modal-lg">
+				<div class="modal-content">
+					<div class="modal-header drag-selector">
+						<h5 class="modal-title" id="global-group-chat-modal-label">Global Messages</h5>
+						<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+						${messagesHtml}
+					</div>
+					<div class="modal-footer flex-column align-items-stretch">
+						<textarea id="global-group-message-textarea" rows="3" class="form-control mb-2" placeholder="Type your message..."></textarea>
+						<button type="button" class="btn btn-primary mb-2" id="global-group-message-send-btn">Send</button>
+						<div class="d-flex flex-wrap">${quickRepliesHtml}</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	`;
+
+	document.body.insertAdjacentHTML("beforeend", modalHtml);
+	const modal = new bootstrap.Modal(document.getElementById("global-group-chat-modal"));
+	makeDraggable(document.getElementById("global-group-chat-modal"), document.querySelector(".drag-selector"));
+	modal.show();
+
+	document
+		.getElementById("global-group-message-send-btn")
+		.addEventListener("click", () => {
+			const textarea = document.getElementById("global-group-message-textarea");
+			const message = textarea.value.trim();
+			if (message) {
+				reaperNodeSocket.emit("send_reaper_node_command", { command: "AT+MSG=" + message });
+				textarea.value = "";
+				//modal.hide();
+				//document.getElementById("global-group-chat-modal").remove();
+			} else {
+				alert("Please enter a message.");
+			}
+		});
+
+	document.querySelectorAll(".quick-reply-btn").forEach((btn) => {
+		btn.addEventListener("click", () => {
+			const textarea = document.getElementById("global-group-message-textarea");
+			textarea.value = btn.textContent;
+			textarea.focus();
+		});
+	});
 }

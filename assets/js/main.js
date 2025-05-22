@@ -1,7 +1,7 @@
 // main.js (Modular version)
 import { getSetting, updateSetting, watchSetting } from "./parts/settings.js";
 import { makeDraggable } from "./parts/helpers.js";
-import { startReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket, createReaperGroupMessageWindow } from "./parts/reaper-node.js";
+import { startReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket, openGroupChatModal, sendCommandToReaperNode } from "./parts/reaper-node.js";
 import { showPopupNotification } from "./parts/notifications.js";
 //import { listPlugins, getPlugin } from "./parts/pluginManager.js";
 //import { encryptText, decryptText, generateSecretKey } from "./parts/crypto.js";
@@ -140,8 +140,22 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	});
 
+	// CENTER ON THE USER LOCATION AND FOLLOW IT
 	document.getElementById("center-on-location-btn").addEventListener("click", () => {
 		toggleFollowUserLocation();
+	});
+
+	// OPEN GLOBAL MESSAGES MODAL CHAT WINDOW.
+	document.getElementById("open-global-messager-btn").addEventListener("click", () => {
+		openGroupChatModal();
+	});
+
+	document.getElementById("send-reaper-cmd-btn").addEventListener("click", () => {
+		const cmd = document.getElementById("reaper-cmd-input").value;
+		if (cmd) {
+			window.bus.dispatchEvent(new CustomEvent("bus:send_reaper_command", { detail: cmd }));
+			document.getElementById("reaper-cmd-input").value = "";
+		}
 	});
 
 	/**
@@ -277,5 +291,14 @@ window.bus.addEventListener("bus:reaper_node_received_beacon_message", (message)
 	console.log("Reaper Node Beacon Message:", message.detail);
 });
 
+// Listen for Reaper Node Command Send
+window.bus.addEventListener("bus:send_reaper_command", (cmd) => {
+	//console.log("Reaper Node Command:", cmd.detail);
+	if (reaperNodeSocket) {
+		sendCommandToReaperNode(cmd.detail);
+	} else {
+		console.error("Reaper Node Socket is not connected.");
+	}
+});
 // @todo: Repear Incoming Group Message
 // @todo: Reaper Incoming Direct Message
