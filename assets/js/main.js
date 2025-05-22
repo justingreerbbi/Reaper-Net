@@ -1,7 +1,7 @@
 // main.js (Modular version)
 import { getSetting, updateSetting, watchSetting } from "./parts/settings.js";
 import { makeDraggable } from "./parts/helpers.js";
-import { startReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket, openGlobalChatWindow } from "./parts/reaper-node.js";
+import { startReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket, openGlobalChatWindow, sendCommandToReaperNode } from "./parts/reaper-node.js";
 import { showPopupNotification } from "./parts/notifications.js";
 import { updateUserLocation, updateUserLocationOnMap, setFollowUserLocation, toggleFollowUserLocation, isFollowingUserLocation } from "./parts/map.js";
 
