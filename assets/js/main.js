@@ -300,5 +300,3 @@ window.bus.addEventListener("bus:send_reaper_command", (cmd) => {
 		console.error("Reaper Node Socket is not connected.");
 	}
 });
-// @todo: Repear Incoming Group Message
-// @todo: Reaper Incoming Direct Message
