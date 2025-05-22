@@ -249,7 +249,9 @@ function addReaperNodeToContactList(node) {
 
 	if (nodeIndex !== -1) {
 		nodes[nodeIndex].last_seen = nowIso;
-		nodes[nodeIndex].telemetry = telemetry;
+		if (node.telemetry) {
+			nodes[nodeIndex].telemetry = telemetry;
+		}
 	} else {
 		nodes.push({
 			device_name: node.device_name,
