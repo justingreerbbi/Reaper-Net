@@ -33,6 +33,10 @@ While the project is not production-ready yet, it offers a glimpse into its capa
 -   AES256 Encryption.
 -   Team Member Tracking.
 
+## ToDos
+
+-  Add location history for nodes to have the ability to see the path of of a node for the last x checkins. Since each node techioncally gets updates during significant movement, we could start storing this and providing it as a way to look back at movement.
+
 ## GeoTIFF Overlay
 
 Reaper Net supports uploading, converting, and applying GeoTIFF files. GeoTIFF files **must** use projection EPSG:3857. While other projections can be used, automatic conversion requires additional server setup. Native in-browser conversion is under consideration.

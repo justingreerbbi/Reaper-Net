@@ -5,7 +5,7 @@ import { startReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket, openG
 import { showPopupNotification } from "./parts/notifications.js";
 //import { listPlugins, getPlugin } from "./parts/pluginManager.js";
 //import { encryptText, decryptText, generateSecretKey } from "./parts/crypto.js";
-import { updateUserLocation, updateUserLocationOnMap, setFollowUserLocation, toggleFollowUserLocation, isFollowingUserLocation } from "./parts/map.js";
+import { updateUserLocation, updateUserLocationOnMap, setFollowUserLocation, toggleFollowUserLocation, isFollowingUserLocation, centerMapOnUserLocation } from "./parts/map.js";
 
 // A simple lightweight event bus for communication between components.
 window.bus = new EventTarget();
@@ -43,7 +43,7 @@ let status = {
 // @todo: We need to check if the app settings exist and if not, create them.
 let appSettings = {
 	startupMapCenter: [41.0128, -81.6054],
-	startupMapZoom: 10,
+	startupMapZoom: 15,
 	showNewGroupMessagePopup: true,
 	showNewDirectMessagePopup: true,
 };
@@ -329,7 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // Reaper GPS Update
 window.bus.addEventListener("bus:gps_update", (gpsData) => {
 	updateUserLocation(gpsData.detail);
-	updateUserLocationOnMap();
+	updateUserLocationOnMap(true);
 });
 
 // Reaper Log from a Reaper Node

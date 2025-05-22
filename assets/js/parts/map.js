@@ -46,7 +46,7 @@ export function moveMarkerSmoothly(marker, newLatLng, duration = 500) {
  */
 export function updateUserLocation(data) {
 	//return new Promise((resolve, reject) => {
-	const requiredFields = ["lat", "lng", "alt", "speed", "heading", "satellites"];
+	const requiredFields = ["latitude", "longitude", "altitude", "speed", "heading", "satellites"];
 	for (const field of requiredFields) {
 		if (data[field] === undefined || data[field] === null) {
 			console.error(`Missing user location field: ${field}`);
@@ -55,12 +55,12 @@ export function updateUserLocation(data) {
 		}
 	}
 	window.userLocation = {
-		lat: data.lat,
-		lng: data.lng,
-		accuracy: data.accuracy,
+		latitude: data.latitude,
+		longitude: data.longitude,
 		speed: data.speed,
 		heading: data.heading,
 		altitude: data.altitude,
+		satellites: data.satellites,
 		timestamp: new Date().toISOString(),
 	};
 	//resolve(window.userLocation);
@@ -74,7 +74,13 @@ export function updateUserLocation(data) {
  */
 export function updateUserLocationOnMap() {
 	if (window.userLocation) {
-		const { lat, lng, accuracy, speed, heading, altitude, timestamp } = window.userLocation;
+		const latitude = window.userLocation.latitude;
+		const longitude = window.userLocation.longitude;
+		const speed = window.userLocation.speed;
+		const heading = window.userLocation.heading;
+		const altitude = window.userLocation.altitude;
+		const satellites = window.userLocation.satellites;
+
 		if (!window.userLocationMarker) {
 			const blueCircleIcon = L.divIcon({
 				className: "",
@@ -82,12 +88,25 @@ export function updateUserLocationOnMap() {
 				iconSize: [18, 18],
 				iconAnchor: [9, 9],
 			});
-			window.userLocationMarker = L.marker([lat, lng], { icon: blueCircleIcon }).addTo(window.map);
+			window.userLocationMarker = L.marker([latitude, longitude], { icon: blueCircleIcon }).addTo(window.map);
+			window.userLocationMarker.bindPopup(
+				`<div class="marker-popup">
+					<h4>Your Position</h4>
+					<div>${latitude}, ${longitude}</div>
+					<div>Speed: ${speed} km/h</div>
+					<div>Altitude: ${altitude} m</div>
+					<div>Heading: ${heading}°</div>		
+					<div>Satellites: ${satellites}</div>
+				</div>`
+			);
+			//if (centerOnLocation) {
+			centerMapOnUserLocation();
+			//}
 		} else {
 			// Move the marker smoothly to the new location
-			moveMarkerSmoothly(window.userLocationMarker, [lat, lng]);
+			moveMarkerSmoothly(window.userLocationMarker, [latitude, longitude]);
 			if (isFollowingUserLocation) {
-				window.map.setView([lat, lng]);
+				window.map.setView([latitude, longitude]);
 			}
 		}
 	} else {
@@ -110,8 +129,8 @@ export function removeUserLocationMarker() {
  */
 export function centerMapOnUserLocation() {
 	if (window.userLocation) {
-		const { lat, lng } = window.userLocation;
-		window.map.setView([lat, lng]);
+		const { latitude, longitude } = window.userLocation;
+		window.map.setView([latitude, longitude]);
 	} else {
 		console.error("User location data is not available.");
 	}

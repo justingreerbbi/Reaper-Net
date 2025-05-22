@@ -192,15 +192,20 @@ function handleReaperResponse(data) {
 	// Capture GPS Update
 	if (parts[0] === "GPS") {
 		// Example: GPS|37.774900,-122.419400,10.0,5.5,180.0,7
-		const [lat, lng, alt, speed, heading, sats] = parts[1].split(",").map(Number);
+		const latitude = parseFloat(parts[1].split(",")[0]);
+		const longitude = parseFloat(parts[1].split(",")[1]);
+		const altitude = parseFloat(parts[1].split(",")[2]);
+		const speed = parseFloat(parts[1].split(",")[3]);
+		const heading = parseFloat(parts[1].split(",")[4]);
+		const satellites = parseInt(parts[1].split(",")[5], 10);
 
 		const gpsData = {
-			lat,
-			lng,
-			alt,
-			speed,
-			heading,
-			satellites: sats,
+			latitude: latitude,
+			longitude: longitude,
+			altitude: altitude,
+			speed: speed,
+			heading: heading,
+			satellites: satellites,
 			timestamp: new Date().toISOString(),
 		};
 
@@ -408,16 +413,16 @@ export function openGroupChatModal() {
 	const groupMessages = JSON.parse(localStorage.getItem("reaper_group_messages") || "[]");
 	const messagesHtml = groupMessages.length
 		? groupMessages
-				.map(
-					(msg) => `
+			.map(
+				(msg) => `
 			<div class="group-message-item mb-3 p-2 border rounded">
 				<div class="fw-bold">${msg.device_name || "Unknown"}</div>
 				<div class="mb-1">${msg.message}</div>
 				<div class="text-muted small">${new Date(msg.timestamp).toLocaleString()}</div>
 			</div>
 		`
-				)
-				.join("")
+			)
+			.join("")
 		: "<div class='text-center text-muted'>No messages yet.</div>";
 
 	const quickReplies = ["Roger that.", "Copy.", "Need assistance.", "All clear.", "Moving to location."];
