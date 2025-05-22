@@ -15,6 +15,7 @@ window.markers = [];
 window.userLocation = null;
 window.userLocationMarker = null;
 window.updateGroupMessagesContent = updateGroupMessagesContent;
+window.nodeMarkers = [];
 
 // Encryption Keys for the app. This is not secure by any means on the device itself. The idea is the encrypt the data being transmitted and assumes
 // the device is secure. The keys are generated on the device and stored in localStorage.
@@ -270,6 +271,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		updateMemoryUsage();
 		updateReaperNodeContent();
 		updateGroupMessagesContent();
+		updateNodeMarkers();
 	}
 
 	/**
@@ -351,7 +353,7 @@ window.bus.addEventListener("bus:reaper_node_received_direct_message", (message)
 
 // Listen for Reaper Node Beacon Message
 window.bus.addEventListener("bus:reaper_node_received_beacon_message", (message) => {
-	console.log("Reaper Node Beacon Message:", message.detail);
+	updateNodeMarkers(); // Update the node markers on the map.
 });
 
 // Listen for Reaper Node Command Send
