@@ -78,7 +78,7 @@ function getServerStatusAndUpdate() {
 
 /**
  * Setup the Map
- * 
+ *
  * This function initializes the map and sets the view to the startup location.
  * Right now it also as map listeners as well. I am not sure if we want to keep this here or move it to a different file.
  * We will have to look into this later.
@@ -115,7 +115,7 @@ function setupMap() {
 
 /**
  * Update all the node markers on the map.
- * 
+ *
  * This function will check if the node already exists on the map and update its location.
  * If the node does not exist, it will create a new marker for the node.
  * If it does exist, it will update the marker's location.
@@ -369,9 +369,7 @@ window.bus.addEventListener("bus:send_reaper_command", (cmd) => {
 });
 
 // Listen for a Reaper Node sending a global message
-window.bus.addEventListener("bus:reaper_node_send_gloabl_message", (msg) => {
-
-});
+window.bus.addEventListener("bus:reaper_node_send_global_message", (msg) => {});
 
 // Listen for a Reaper Node sending a direct message
 window.bus.addEventListener("bus:reaper_node_send_direct_message", (msg) => {

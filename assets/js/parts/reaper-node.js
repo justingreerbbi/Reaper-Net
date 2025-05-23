@@ -409,7 +409,20 @@ export function openGlobalChatWindow() {
 	// Load messages
 	updateGroupMessagesContent();
 
-	// Button handler
+	/**
+	 * SEND MESSAGE EVENT LISTENERS AND LOGIC
+	 */
+	const input = document.getElementById("global-chat-input");
+	input.addEventListener("keydown", (e) => {
+		if (e.key === "Enter" && !e.shiftKey) {
+			e.preventDefault();
+			const msg = input.value.trim();
+			if (msg) {
+				sendGlobalMessage(msg);
+				input.value = "";
+			}
+		}
+	});
 	document.getElementById("global-chat-send").addEventListener("click", () => {
 		const input = document.getElementById("global-chat-input");
 		const msg = input.value.trim();
@@ -437,15 +450,15 @@ window.updateGroupMessagesContent = function () {
 	container.innerHTML = messages
 		.map((msg) => {
 			const time = new Date(msg.timestamp).toLocaleTimeString();
-			const color = msg.type === "sent" ? "#90ee90" : msg.type === "failed" ? "#ff6666" : "#87ceeb";
+			const color = msg.type === "sent" ? "#00ff00" : msg.type === "failed" ? "#ff6666" : "#87ceeb";
 			return `
-	<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start;">
-		<div style="flex: 1;">
+	<div style="margin-bottom: 20px; display:">
+		<div style="">
 			<span style="color:${color};">${msg.device_name}</span>: 
 			<span style="color:white;">${msg.message}</span>
 		</div>
-		<div style="color:#777; font-size: 0.8em; white-space: nowrap; margin-left: 8px;">
-			${time}
+		<div style="color:#777; font-size: 0.8em; white-space: nowrap; margin-left: 8px; margin-top: 10px; text-align: right;">
+			${time} - ${msg.type === "sent" ? "Sent" : msg.type === "failed" ? "Failed" : "Received"}
 		</div>
 	</div>
 `;
