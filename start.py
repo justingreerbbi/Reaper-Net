@@ -46,7 +46,7 @@ def auto_find_reaper_mesh_node():
                 while time.time() - start_time < REAPER_NODE_DETECTION_TIMEOUT:
                     if ser.in_waiting:
                         line = ser.readline().decode(errors='ignore').strip()
-                        if line.startswith("REAPER_NODE|READY|"):
+                        if line.startswith("HELTEC|READY|"):
                             label = line.split("|")[2]
                             devices[port.device] = label
                             break
