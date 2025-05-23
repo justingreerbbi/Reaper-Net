@@ -53,7 +53,7 @@ export function sendGlobalMessage(message) {
 		msgId: null,
 		read: true,
 		timestamp: new Date().toISOString(),
-		_temp: true
+		_temp: true,
 	};
 
 	addGroupMessageToStorage(msgObj);
@@ -104,6 +104,32 @@ function handleReaperResponse(data) {
 	localStorage.setItem("reaper_node_lines", JSON.stringify(reaper_node_lines));
 
 	const parts = data.split("|");
+
+	if (parts[0] == "GPS") {
+		const gpsData = parts[1].split(",");
+		const latitude = parseFloat(gpsData[0], 6);
+		const longitude = parseFloat(gpsData[1], 6);
+		const altitude = parseFloat(gpsData[2]);
+		const speed = parseFloat(gpsData[3]);
+		const heading = parseFloat(gpsData[4]);
+		const satellites = parseInt(gpsData[5], 10);
+
+		// Store latest GPS data globally
+		window.last_gps_data = {
+			latitude,
+			longitude,
+			altitude,
+			speed,
+			heading,
+			satellites,
+			timestamp: new Date().toISOString(),
+		};
+
+		localStorage.setItem("last_gps_data", JSON.stringify(window.last_gps_data));
+		window.bus.dispatchEvent(new CustomEvent("bus:gps_update", { detail: window.last_gps_data }));
+
+		return;
+	}
 
 	// === TRACK SEND ATTEMPT ===
 	if (parts[0] === "SEND" && parts[1] === "ATTEMPT") {
@@ -170,14 +196,7 @@ function handleReaperResponse(data) {
 		// Beacon Format: RECV|BEACON|DEVICE_NAME|LATITUDE,LONGITUDE,ALTITUDE,SPEED,HEADING,SATELLITES
 		const deviceName = parts[2];
 		const telemetryParts = (parts[3] || "").split(",");
-		const [
-			latitude,
-			longitude,
-			altitude,
-			speed,
-			heading,
-			satellites
-		] = telemetryParts.map((v, i) => i < 2 ? parseFloat(v) : (i === 5 ? parseInt(v, 10) : parseFloat(v)));
+		const [latitude, longitude, altitude, speed, heading, satellites] = telemetryParts.map((v, i) => (i < 2 ? parseFloat(v) : i === 5 ? parseInt(v, 10) : parseFloat(v)));
 
 		const m = {
 			device_name: deviceName,
@@ -194,8 +213,8 @@ function handleReaperResponse(data) {
 				altitude,
 				speed,
 				heading,
-				satellites
-			}
+				satellites,
+			},
 		};
 		addReaperNodeToContactList(m);
 		window.bus.dispatchEvent(new CustomEvent("bus:reaper_node_received_beacon", { detail: m }));
@@ -257,7 +276,7 @@ function addReaperNodeToContactList(node) {
 			device_name: node.device_name,
 			found_at: nowIso,
 			last_seen: nowIso,
-			telemetry
+			telemetry,
 		});
 	}
 
@@ -281,15 +300,16 @@ export function updateReaperNodeContent() {
 		return;
 	}
 
-	const itemsHTML = reaper_nodes_found.map((node) => {
-		const foundAt = new Date(node.found_at).toLocaleString();
-		const lastSeen = new Date(node.last_seen);
-		const now = new Date();
-		const diffMin = Math.floor((now - lastSeen) / 60000);
-		const lastCheckIn = diffMin < 1 ? "Just Now" : `${diffMin} min${diffMin > 1 ? "s" : ""} ago`;
-		const gpsData = node.telemetry ? `${node.telemetry.latitude}, ${node.telemetry.longitude}` : "No GPS";
+	const itemsHTML = reaper_nodes_found
+		.map((node) => {
+			const foundAt = new Date(node.found_at).toLocaleString();
+			const lastSeen = new Date(node.last_seen);
+			const now = new Date();
+			const diffMin = Math.floor((now - lastSeen) / 60000);
+			const lastCheckIn = diffMin < 1 ? "Just Now" : `${diffMin} min${diffMin > 1 ? "s" : ""} ago`;
+			const gpsData = node.telemetry ? `${node.telemetry.latitude}, ${node.telemetry.longitude}` : "No GPS";
 
-		return `
+			return `
 		<li>
 			<div class="node-list-item">
 				<div class="node-name light-text">CALLSIGN: ${node.device_name.toUpperCase()}</div>
@@ -304,7 +324,8 @@ export function updateReaperNodeContent() {
 			</div>
 		</li>
 		`;
-	}).join("");
+		})
+		.join("");
 
 	nodeList.innerHTML = itemsHTML;
 	nodeListHeader.textContent = `Nodes (${reaper_nodes_found.length})`;
@@ -413,11 +434,11 @@ window.updateGroupMessagesContent = function () {
 
 	const messages = JSON.parse(localStorage.getItem("reaper_global_messages") || "[]");
 
-	container.innerHTML = messages.map((msg) => {
-		const time = new Date(msg.timestamp).toLocaleTimeString();
-		const color = msg.type === "sent" ? "#90ee90" :
-			msg.type === "failed" ? "#ff6666" : "#87ceeb";
-		return `
+	container.innerHTML = messages
+		.map((msg) => {
+			const time = new Date(msg.timestamp).toLocaleTimeString();
+			const color = msg.type === "sent" ? "#90ee90" : msg.type === "failed" ? "#ff6666" : "#87ceeb";
+			return `
 	<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start;">
 		<div style="flex: 1;">
 			<span style="color:${color};">${msg.device_name}</span>: 
@@ -428,11 +449,11 @@ window.updateGroupMessagesContent = function () {
 		</div>
 	</div>
 `;
-	}).join("");
+		})
+		.join("");
 
 	container.scrollTop = container.scrollHeight;
 };
-
 
 /**
  * Cleanup log memory
