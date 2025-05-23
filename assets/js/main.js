@@ -375,3 +375,6 @@ window.bus.addEventListener("bus:reaper_node_send_global_message", (msg) => {});
 window.bus.addEventListener("bus:reaper_node_send_direct_message", (msg) => {
 	//console.log("Direct Message:", msg.detail);
 });
+
+// Listen for a ACK Confirm for a message
+windows.bus.addEventListener("bus:reaper_node_ack_confirm", (msg) => {});

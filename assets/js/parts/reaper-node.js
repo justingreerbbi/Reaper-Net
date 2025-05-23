@@ -46,7 +46,7 @@ export function sendGlobalMessage(message) {
 	sendingMessageMsgId = null;
 
 	const msgObj = {
-		type: "sent",
+		type: "sending",
 		direction: "sent",
 		device_name: "Me",
 		message,
@@ -218,6 +218,24 @@ function handleReaperResponse(data) {
 		};
 		addReaperNodeToContactList(m);
 		window.bus.dispatchEvent(new CustomEvent("bus:reaper_node_received_beacon", { detail: m }));
+	}
+
+	// === HANDLE GENERIC ACK CONFIRM ===
+	if (parts[0] === "ACK" && parts[1] === "CONFIRM") {
+		const msgId = parts[2];
+		if (msgId === sendingMessageMsgId) {
+			isSendingMessage = false;
+			sendingMessageMsgId = null;
+			if (pendingMessageTimer) clearTimeout(pendingMessageTimer);
+
+			const messages = JSON.parse(localStorage.getItem("reaper_global_messages") || "[]");
+			const idx = messages.findIndex((m) => m.msgId === msgId);
+			if (idx !== -1) {
+				messages[idx].type = "received";
+				localStorage.setItem("reaper_global_messages", JSON.stringify(messages));
+				window.updateGroupMessagesContent?.();
+			}
+		}
 	}
 }
 
@@ -451,6 +469,14 @@ window.updateGroupMessagesContent = function () {
 		.map((msg) => {
 			const time = new Date(msg.timestamp).toLocaleTimeString();
 			const color = msg.type === "sent" ? "#00ff00" : msg.type === "failed" ? "#ff6666" : "#87ceeb";
+			let statusText = "";
+			if (msg.direction === "sent" && msg.type === "received") {
+				statusText = "ACK Confirmed";
+			} else if (msg.direction === "sent" && msg.type === "sending") {
+				statusText = "Sending...";
+			} else {
+				statusText = msg.type === "sent" ? "Sent" : msg.type === "failed" ? "Failed" : "Received";
+			}
 			return `
 	<div style="margin-bottom: 20px; display:">
 		<div style="">
@@ -458,7 +484,7 @@ window.updateGroupMessagesContent = function () {
 			<span style="color:white;">${msg.message}</span>
 		</div>
 		<div style="color:#777; font-size: 0.8em; white-space: nowrap; margin-left: 8px; margin-top: 10px; text-align: right;">
-			${time} - ${msg.type === "sent" ? "Sent" : msg.type === "failed" ? "Failed" : "Received"}
+			${time} - ${statusText}
 		</div>
 	</div>
 `;
