@@ -35,7 +35,9 @@ While the project is not production-ready yet, it offers a glimpse into its capa
 
 ## ToDos
 
--  Add location history for nodes to have the ability to see the path of of a node for the last x checkins. Since each node techioncally gets updates during significant movement, we could start storing this and providing it as a way to look back at movement.
+-   Location history for reaper nodes.
+-   Add ADS-B support with the ability to marker aircraft friendly or enemy, or unknown as well as add a description. Local storage and server api for saving to local system. [https://airmetar.main.jp/radio/ADS-B%20Decoding%20Guide.pdf]
+-   Add proper support for icons for different types of markers.
 
 ## GeoTIFF Overlay
 
