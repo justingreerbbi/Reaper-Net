@@ -23,6 +23,7 @@ While the project is not production-ready yet, it offers a glimpse into its capa
 -   Add proper support for icons for different types of markers.
 -   Finish migrating reaper-node functions to use core API and hooks instead of direct integration.
 -   Start really honing on on structure, API, and exported hooks. Determine what is core and what is a plugin.
+-   Add server API to save all markers and data so it is not always in localstorage. Localstorage should be for quick access.
 
 ## Features
 
