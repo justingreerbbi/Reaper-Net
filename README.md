@@ -23,6 +23,7 @@ While the project is not production-ready yet, it offers a glimpse into its capa
 -   Add proper support for icons for different types of markers.
 -   Finish migrating reaper-node functions to use core API and hooks instead of direct integration.
 -   Start really honing on on structure, API, and exported hooks. Determine what is core and what is a plugin.
+-   Build packer for the app for windows, OSX, and Raspberry. While the system will be already installed on the product, for public, this is the best case.
 
 ## Features
 
