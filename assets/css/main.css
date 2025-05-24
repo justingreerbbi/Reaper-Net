@@ -284,7 +284,7 @@ button:focus:active {
 }
 
 /* === TOOLBAR === */
-#toolbar {
+#map-toolbar {
 	position: absolute;
 	top: 100px;
 	left: 10px;
@@ -297,7 +297,7 @@ button:focus:active {
 	cursor: move;
 }
 
-#toolbar button {
+#map-toolbar button {
 	width: 100%;
 	margin-bottom: 6px;
 }

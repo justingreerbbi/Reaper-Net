@@ -279,6 +279,30 @@ export function toggleFollowUserLocation() {
 	btn?.classList.toggle("active", isFollowingUserLocation);
 }
 
+/**
+ * Adds a button to the map toolbar.
+ *
+ * Gives plugins the ability to add a custom button to the map toolbar and control what happens when the button is clicked.
+ *
+ * @param {string} buttonId - The ID for the button.
+ * @param {string} iconHtml - HTML string for the button icon.
+ * @param {string} tooltipText - Tooltip text for the button.
+ * @param {function} onClick - Function to call when the button is clicked.
+ * @returns {void}
+ */
+export function addButtonToToolbar(buttonId, iconHtml, tooltipText, onClick) {
+	const toolbar = document.getElementById("map-toolbar");
+	if (!toolbar) return;
+
+	const button = document.createElement("button");
+	button.id = buttonId;
+	button.className = "btn btn-secondary";
+	button.innerHTML = iconHtml;
+	button.title = tooltipText;
+	button.addEventListener("click", onClick);
+	toolbar.appendChild(button);
+}
+
 /* ───── Init ───── */
 window.addEventListener("DOMContentLoaded", () => {
 	customMarkers = loadMarkersFromStorage();

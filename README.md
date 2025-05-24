@@ -18,11 +18,11 @@ While the project is not production-ready yet, it offers a glimpse into its capa
 
 ## Todos
 
--   Investigate CesiumJS for 3D mapping
--   Consider integrating [Leaflet.Elevation](https://github.com/MrMufflon/Leaflet.Elevation)
--   Explore WMTS overlays such as:
-
-    -   `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/{time}/250m/{z}/{y}/{x}.jpg`
+-   Location history for reaper nodes.
+-   Add ADS-B support with the ability to marker aircraft friendly or enemy, or unknown as well as add a description. Local storage and server api for saving to local system. [https://airmetar.main.jp/radio/ADS-B%20Decoding%20Guide.pdf]
+-   Add proper support for icons for different types of markers.
+-   Finish migrating reaper-node functions to use core API and hooks instead of direct integration.
+-   Start really honing on on structure, API, and exported hooks. Determine what is core and what is a plugin.
 
 ## Features
 
@@ -32,12 +32,6 @@ While the project is not production-ready yet, it offers a glimpse into its capa
 -   Extendable by plugins using the core API.
 -   AES256 Encryption.
 -   Team Member Tracking.
-
-## ToDos
-
--   Location history for reaper nodes.
--   Add ADS-B support with the ability to marker aircraft friendly or enemy, or unknown as well as add a description. Local storage and server api for saving to local system. [https://airmetar.main.jp/radio/ADS-B%20Decoding%20Guide.pdf]
--   Add proper support for icons for different types of markers.
 
 ## GeoTIFF Overlay
 
