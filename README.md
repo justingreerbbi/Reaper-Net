@@ -48,6 +48,8 @@ GeoTIFF files are scanned historic maps enhanced with embedded metadata, allowin
 
 ## Installation
 
+You should have at least Python 3.13.2 for development Releases are prepackaged and ready to go.
+
 1. Clone the repository:
 
     ```bash
@@ -63,7 +65,7 @@ GeoTIFF files are scanned historic maps enhanced with embedded metadata, allowin
 3. Install dependencies:
 
     ```bash
-    pip install -r requirements.txt
+    pip install pyserial flask flask-socketio
     ```
 
 ## Usage
