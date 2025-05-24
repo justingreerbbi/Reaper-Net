@@ -1,7 +1,7 @@
 // main.js (Modular version)
 import { getSetting, updateSetting, watchSetting } from "./parts/settings.js";
 import { makeDraggable } from "./parts/helpers.js";
-import { startReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket, openGlobalChatWindow, sendCommandToReaperNode } from "./parts/reaper-node.js";
+import { initializeReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket, openGlobalChatWindow, sendCommandToReaperNode } from "./parts/reaper-node.js";
 import { showPopupNotification } from "./parts/notifications.js";
 import { updateUserLocation, updateUserLocationOnMap, setFollowUserLocation, toggleFollowUserLocation, isFollowingUserLocation } from "./parts/map.js";
 
@@ -57,11 +57,10 @@ function getServerStatusAndUpdate() {
 
 			updateIcon("#internet-connection-status", status.internetConnected);
 			updateIcon("#reaper-node-status", status.reaperNodeConnected);
-			updateIcon("#gps-status", status.gpsConnected);
 
 			// If there is a reaper node connected and the socket is not already started, start it.
 			if (status.reaperNodeConnected && !reaperNodeSocket) {
-				startReaperNodeSocket();
+				initializeReaperNodeSocket();
 			}
 
 			//console.log("Status Data:", data);
@@ -86,6 +85,7 @@ function getServerStatusAndUpdate() {
 function setupMap() {
 	// Initialize the map and set the view to the startup location.
 	window.map = L.map("map").setView(appSettings.startupMapCenter, appSettings.startupMapZoom);
+	window.map.zoomControl.remove();
 
 	// Check if the there is a last known location in localStorage and set the map view to that location.
 	const last_known_gps_data = JSON.parse(localStorage.getItem("last_gps_data"));
@@ -377,4 +377,4 @@ window.bus.addEventListener("bus:reaper_node_send_direct_message", (msg) => {
 });
 
 // Listen for a ACK Confirm for a message
-windows.bus.addEventListener("bus:reaper_node_ack_confirm", (msg) => {});
+window.bus.addEventListener("bus:reaper_node_ack_confirm", (msg) => {});

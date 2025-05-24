@@ -1,3 +1,4 @@
+import { decryptText, encryptText } from "./crypto.js";
 import { makeDraggable } from "./helpers.js";
 
 // === Reaper Node State ===
@@ -10,6 +11,9 @@ let pendingMessageTimer = null;
 export let reaperNodeSocket = null;
 export let isSendingMessage = false;
 export let sendingMessageMsgId = null;
+export let secretKeys = {
+	default: "Mw3KaqkQXG0lfqs5pFGNib2s7ixRqURCU5D6UMU5qp3uL8hnHumbSa6Iv5ic",
+};
 
 const NODE_LIST_EXPIRE_MINUTES = 10;
 const LINE_HISTORY_EXPIRE_MINUTES = 30;
@@ -17,7 +21,7 @@ const LINE_HISTORY_EXPIRE_MINUTES = 30;
 /**
  * Start socket connection
  */
-export function startReaperNodeSocket() {
+export function initializeReaperNodeSocket() {
 	reaper_log = document.getElementById("reaper-log");
 	reaperNodeSocket = io();
 
@@ -30,6 +34,66 @@ export function startReaperNodeSocket() {
 		const lineObj = { line: data.line, timestamp: now.toISOString() };
 		reaper_node_lines.push(lineObj);
 		handleReaperResponse(data.line);
+	});
+
+	/**
+	 * Add incoming frag message indicator to the bottom left of the screen
+	 */
+	if (!document.getElementById("frag-indicator")) {
+		const fragIndicator = document.createElement("div");
+		fragIndicator.id = "frag-indicator";
+		fragIndicator.innerHTML = `
+			<div id="frag-indicator-circle"></div>
+		`;
+		fragIndicator.style = `
+			position: fixed;
+			top: 15px;
+			left: 15px;
+			width: 50px;
+			height: 26px;
+			background: rgba(30,30,30,0.85);
+			border-radius: 4px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			z-index: 10001;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+		`;
+		const circle = fragIndicator.querySelector("#frag-indicator-circle");
+		circle.style = `
+			width: 15px;
+			height: 15px;
+			border-radius: 50%;
+			background: #444;
+			border: 2px solid #222;
+			transition: background 0.2s;
+		`;
+
+		document.body.appendChild(fragIndicator);
+	}
+
+	let fragBlinkTimer = null;
+	let fragBlinkCount = 0;
+
+	function blinkFragIndicator() {
+		const circle = document.getElementById("frag-indicator-circle");
+		if (!circle) return;
+		fragBlinkCount = 0;
+		if (fragBlinkTimer) clearInterval(fragBlinkTimer);
+		fragBlinkTimer = setInterval(() => {
+			circle.style.background = fragBlinkCount % 2 === 0 ? "#198754" : "#444";
+			fragBlinkCount++;
+			if (fragBlinkCount >= 6) {
+				// 3 blinks (500ms each)
+				clearInterval(fragBlinkTimer);
+				circle.style.background = "#444";
+			}
+		}, 500);
+	}
+
+	// Listen for incoming frag messages and trigger indicator
+	window.bus.addEventListener("bus:reaper_node_incoming_frag", (data) => {
+		blinkFragIndicator();
 	});
 }
 
@@ -161,11 +225,12 @@ function handleReaperResponse(data) {
 
 	// === HANDLE GROUP MSG ===
 	if (parts[0] === "RECV" && parts[1] === "MSG") {
+		var message = parts[3];
 		const m = {
 			type: "received",
 			direction: "received",
 			device_name: parts[2],
-			message: parts[3],
+			message: message,
 			msgId: parts[4],
 			read: false,
 			timestamp: new Date().toISOString(),
@@ -175,12 +240,18 @@ function handleReaperResponse(data) {
 		window.bus.dispatchEvent(new CustomEvent("bus:reaper_node_received_global_message", { detail: m }));
 	}
 
+	// === HANDLE RECV FRAG/INCOMING ===
+	if (parts[0] === "RECV" && parts[1] === "FRAG") {
+		window.bus.dispatchEvent(new CustomEvent("bus:reaper_node_incoming_frag", { detail: parts }));
+	}
+
 	// === HANDLE DIRECT MSG ===
 	if (parts[0] === "RECV" && parts[1] === "DMSG") {
+		message = parts[4];
 		const m = {
 			device_name: parts[2],
 			recipient: parts[3],
-			message: parts[4],
+			message: message,
 			msgId: parts[5],
 			read: false,
 			timestamp: new Date().toISOString(),
