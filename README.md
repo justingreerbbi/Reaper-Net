@@ -23,7 +23,7 @@ While the project is not production-ready yet, it offers a glimpse into its capa
 -   Add proper support for icons for different types of markers.
 -   Finish migrating reaper-node functions to use core API and hooks instead of direct integration.
 -   Start really honing on on structure, API, and exported hooks. Determine what is core and what is a plugin.
--   Add server API to save all markers and data so it is not always in localstorage. Localstorage should be for quick access.
+-   Build packer for the app for windows, OSX, and Raspberry. While the system will be already installed on the product, for public, this is the best case.
 
 ## Features
 
@@ -49,6 +49,8 @@ GeoTIFF files are scanned historic maps enhanced with embedded metadata, allowin
 
 ## Installation
 
+You should have at least Python 3.13.2 for development Releases are prepackaged and ready to go.
+
 1. Clone the repository:
 
     ```bash
@@ -64,7 +66,7 @@ GeoTIFF files are scanned historic maps enhanced with embedded metadata, allowin
 3. Install dependencies:
 
     ```bash
-    pip install -r requirements.txt
+    pip install pyserial flask flask-socketio
     ```
 
 ## Usage

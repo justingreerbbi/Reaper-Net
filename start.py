@@ -8,6 +8,7 @@ import sqlite3
 import serial.tools.list_ports
 from flask import Flask, jsonify, send_from_directory, request
 from flask_socketio import SocketIO
+import subprocess
 
 # === Flask + SocketIO setup ===
 app = Flask(__name__, static_folder='.', static_url_path='')
@@ -106,6 +107,17 @@ def list_plugins():
 def start_server():
     socketio.run(app, port=1776)
 
+# === Webview Setup ===
+def launch_window():
+    subprocess.Popen([
+        "chromium-browser",
+        "--app=http://localhost:1776",
+        "--window-size=1024,768",
+        "--noerrdialogs",
+        "--disable-infobars",
+        #"--kiosk"  # Optional: for fullscreen kiosk mode
+    ])
+
 # === Main Entry ===
 if __name__ == '__main__':
     print("")
@@ -126,7 +138,17 @@ if __name__ == '__main__':
         print("No Reaper Mesh Node detected.")
 
     threading.Thread(target=start_server, daemon=True).start()
-    webbrowser.open("http://localhost:1776")
+
+    # Wait for the server to start
+    while not socketio.server:
+        time.sleep(0.1)
+    
+    # Launch application window.
+    launch_window()
+
+    # Development
+    #webbrowser.open("http://localhost:1776")
+
 
     try:
         while True:
