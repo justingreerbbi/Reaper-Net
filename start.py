@@ -19,8 +19,19 @@ reaper_node_serial = None
 reaper_node_connected = False
 connected_reaper_node_port = None
 connected_reaper_node_name = None
+aircraft_srd_connected = False
 
 REAPER_NODE_DETECTION_TIMEOUT = 4
+
+# AIRCRAFT DATA
+aircraft_data = {}
+SBS1_FIELDS = [
+    "message_type", "transmission_type", "session_id", "aircraft_id",
+    "hex_ident", "flight_id", "generated_date", "generated_time",
+    "logged_date", "logged_time", "callsign", "altitude", "ground_speed",
+    "track", "lat", "lon", "vertical_rate", "squawk",
+    "alert", "emergency", "spi", "is_on_ground"
+]
 
 # === Utility: Check Internet ===
 def check_internet():
@@ -78,6 +89,38 @@ def handle_send_command(data):
         print(f"[SEND] {command}")
         reaper_node_serial.write(f"{command}\n".encode())
 
+# === Aircraft Monitor ===
+def parse_sbs1_line(line):
+    parts = line.strip().split(',')
+    if len(parts) < 22:
+        return None
+
+    parsed = dict(zip(SBS1_FIELDS, parts))
+    return parsed
+
+def sbs1_listener(host='127.0.0.1', port=30003):
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.connect((host, port))
+            print(f"[*] Connected to dump1090 on {host}:{port}")
+            aircraft_srd_connected = True
+            while True:
+                data = sock.recv(4096)
+                if not data:
+                    break
+
+                lines = data.decode(errors='ignore').splitlines()
+                for line in lines:
+                    parsed = parse_sbs1_line(line)
+                    if parsed and parsed.get("hex_ident"):
+                        icao = parsed["hex_ident"]
+                        # Merge fields into current state
+                        ac = aircraft_data.setdefault(icao, {})
+                        ac.update({k: v for k, v in parsed.items() if v})
+                        ac["last_seen"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    except Exception as e:
+        print(f"[!] Error connecting to SBS1 feed: {e}")
+
 # === Routes ===
 @app.route('/')
 def index():
@@ -89,6 +132,7 @@ def api_status():
     return jsonify({
         "internetConnected": check_internet(),
         "reaperNodeConnected": reaper_node_connected,
+        "aircraftSrdConnected": aircraft_srd_connected,
         "reaperNodeName": connected_reaper_node_name,
         "reaperNodePort": connected_reaper_node_port,
         "backendVersion": "1.4.1",
@@ -102,6 +146,10 @@ def list_plugins():
 	plugins_dir = os.path.join(app.root_path, 'plugins')
 	plugin_files = [f for f in os.listdir(plugins_dir) if f.endswith('.js')]
 	return jsonify([os.path.splitext(p)[0] for p in plugin_files])
+
+@app.route('/api/aircraft')
+def get_aircraft():
+    return jsonify(aircraft_data)
 
 # === Start Server ===
 def start_server():
@@ -137,18 +185,21 @@ if __name__ == '__main__':
     else:
         print("No Reaper Mesh Node detected.")
 
+    # Start Flask server in background
     threading.Thread(target=start_server, daemon=True).start()
+
+     # Start SBS1 listener in background
+    threading.Thread(target=sbs1_listener, daemon=True).start()
 
     # Wait for the server to start
     while not socketio.server:
         time.sleep(0.1)
     
     # Launch application window.
-    launch_window()
+    #launch_window()
 
     # Development
-    #webbrowser.open("http://localhost:1776")
-
+    webbrowser.open("http://localhost:1776")
 
     try:
         while True:
