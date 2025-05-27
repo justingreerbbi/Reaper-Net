@@ -36,9 +36,21 @@ While the project is not production-ready yet, it offers a glimpse into its capa
 
 Reaper Net supports global and direct messaging as well as beacons to update locations.
 
+**ToDos**
+
+-   Update last seen to hours, days, weeks...
+-   Ability to send marker data to single person or global group.
+-   Request beacon feature?
+
 ### Aircraft Tracker v1.0
 
 Reaper Net supports dump1090 on default settings. The current version supports dump1090 integration and aircraft markers on the map along with basic information Future plans include adding in filtering, searching, history data, and the ability to customize specific aircraft.
+
+**ToDos**
+
+-   Add in aircraft ICAO lookup to start building known aircraft. This is more for development and DD Building.
+-   Add history for aircraft on screen. Selecting will show history of aircraft while in the AO.
+-   Add setting to include purge time, DB builder, toggle aircraft, filter, ICAO search, alert on new aircraft/purged aircraft.
 
 ### Long Range 2.4Ghz Data Transmission v1.0
 
