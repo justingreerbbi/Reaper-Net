@@ -4,6 +4,7 @@ import { makeDraggable } from "./parts/helpers.js";
 import { initializeReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket, openGlobalChatWindow, sendCommandToReaperNode } from "./parts/reaper-node.js";
 import { showPopupNotification } from "./parts/notifications.js";
 import { updateUserLocation, updateUserLocationOnMap, setFollowUserLocation, toggleFollowUserLocation, isFollowingUserLocation } from "./parts/map.js";
+import { updateAircraft } from "./parts/aircraft-tracker.js";
 
 // A simple lightweight event bus for communication between components.
 window.bus = new EventTarget();
@@ -13,6 +14,8 @@ window.markers = [];
 window.userLocation = null;
 window.userLocationMarker = null;
 window.nodeMarkers = [];
+window.aircraftMarkers = [];
+window.aircraftTimer = null;
 
 // Encryption Keys for the app. This is not secure by any means on the device itself. The idea is the encrypt the data being transmitted and assumes
 // the device is secure. The keys are generated on the device and stored in localStorage.
@@ -27,14 +30,15 @@ let systemTimer;
 let pluginsLoaded = false;
 
 let status = {
-	internetConnected: false,
-	reaperNodeConnected: false,
-	reaperNodeName: "",
-	reaperNodePort: "",
-	gpsDevice: "",
-	gpsConnected: false,
-	backendVersion: "0.0.0",
-	frontendVersion: "0.0.0",
+	internet_connected: false,
+	reaper_node_connected: false,
+	reaper_node_name: "",
+	reaper_node_port: "",
+	gps_device: "",
+	gps_connected: false,
+	backend_version: "0.0.0",
+	frontend_version: "0.0.0",
+	aircraft_tracker_connected: false,
 };
 
 // @todo: We need to check if the app settings exist and if not, create them.
@@ -49,23 +53,35 @@ function getServerStatusAndUpdate() {
 	fetch("/api/status")
 		.then((res) => res.json())
 		.then((data) => {
-			status = { ...status, ...data };
+			Object.assign(status, data);
+
+			// Handle aircraft tracker updates and timer
+			if (!window.aircraftTimer && status.aircraft_tracker_connected) {
+				updateAircraft(); // Initial update
+				window.aircraftTimer = setInterval(() => {
+					updateAircraft();
+				}, 1000); // Update aircraft every 5 seconds
+			} else if (window.aircraftTimer && !status.aircraft_tracker_connected) {
+				clearInterval(window.aircraftTimer);
+				window.aircraftTimer = null;
+			}
 
 			const updateIcon = (selector, ok) => {
 				document.querySelector(selector).innerHTML = `<i class="bi bi-${ok ? "check" : "x"}-square-fill text-${ok ? "success" : "danger"}"></i>`;
 			};
 
-			updateIcon("#internet-connection-status", status.internetConnected);
-			updateIcon("#reaper-node-status", status.reaperNodeConnected);
+			updateIcon("#internet-connection-status", status.internet_connected);
+			updateIcon("#reaper-node-status", status.reaper_node_connected);
+			updateIcon("#aircraft-tracker-status", status.aircraft_tracker_connected);
 
 			// If there is a reaper node connected and the socket is not already started, start it.
-			if (status.reaperNodeConnected && !reaperNodeSocket) {
+			if (status.reaper_node_connected && !reaperNodeSocket) {
 				initializeReaperNodeSocket();
 			}
 
 			//console.log("Status Data:", data);
-			document.getElementById("sys-backend-version-value").innerText = status.backendVersion;
-			document.getElementById("sys-frontend-version-value").innerText = status.frontendVersion;
+			document.getElementById("sys-backend-version-value").innerText = status.backend_version;
+			document.getElementById("sys-frontend-version-value").innerText = status.frontend_version;
 			const localStorageSize = Object.keys(localStorage).reduce((total, key) => {
 				const value = localStorage.getItem(key);
 				return total + key.length + (value ? value.length : 0);
@@ -366,6 +382,126 @@ window.bus.addEventListener("bus:send_reaper_command", (cmd) => {
 	} else {
 		console.error("Reaper Node Socket is not connected.");
 	}
+});
+
+// Listen for Reaper Node Command Send
+window.bus.addEventListener("bus:update_aircraft_markers", (evt) => {
+	window.aircraftMarkers.forEach((m) => {
+		if (m.marker && window.map.hasLayer(m.marker)) {
+			window.map.removeLayer(m.marker);
+		}
+	});
+	window.aircraftMarkers = [];
+
+	window.aircraftMarkers = evt.detail;
+	evt.detail.forEach((markerData) => {
+		const {
+			hex_ident = null,
+			lat = null,
+			lon = null,
+			altitude = null,
+			callsign = null,
+			ground_speed = null,
+			track = null,
+			vertical_rate = null,
+			is_on_ground = null,
+			squawk = null,
+			alert = null,
+			emergency = null,
+			spi = null,
+			flight_id = null,
+			aircraft_id = null,
+			session_id = null,
+			message_type = null,
+			generated_date = null,
+			generated_time = null,
+			last_seen = null,
+			logged_date = null,
+			logged_time = null,
+		} = markerData;
+
+		//console.log("Processing Aircraft Marker:", markerData);
+
+		// Skip if lat or lon is missing
+		if (lat === null || lon === null) return;
+
+		// Skip if logged_time is older than 5 minutes
+		if (logged_time && logged_date) {
+			const now = new Date();
+			const markerDate = new Date(`${logged_date}T${logged_time}`);
+			const diffMs = now - markerDate;
+			if (diffMs > 5 * 60 * 1000) return;
+		}
+
+		const latitude = parseFloat(lat);
+		const longitude = parseFloat(lon);
+		if (!hex_ident || /^0+$/.test(hex_ident)) return;
+
+		let markerObj = window.aircraftMarkers.find((m) => m.hex_ident === hex_ident);
+
+		if (markerObj && markerObj.marker) {
+			markerObj.marker.setLatLng([latitude, longitude]);
+		} else {
+			// Create new marker
+			const rotation = parseInt(track) || 0; // Default to 0 if track is not a number
+			const aircraftIcon = L.divIcon({
+				className: "custom-aircraft-icon",
+				iconSize: [24, 24],
+				iconAnchor: [12, 12],
+				html: `<svg width="25" height="25" viewBox="0 0 20 20" style="transform: rotate(${rotation}deg);"><polygon points="10,2 13,18 10,15 7,18" fill="#2196f3" stroke="#fff" stroke-width="1"/></svg>`,
+			});
+			const marker = L.marker([latitude, longitude], { icon: aircraftIcon, title: callsign }).addTo(window.map);
+			marker.on("click", () => {
+				const modalId = `aircraft-modal-${hex_ident}`;
+				let modal = document.getElementById(modalId);
+
+				// Remove existing modal if present
+				if (modal) modal.remove();
+
+				// Create modal HTML
+				const modalHtml = `
+				<div class="modal fade" id="${modalId}" tabindex="-1" aria-labelledby="${modalId}-label" aria-hidden="true">
+				  <div class="modal-dialog modal-dialog-centered modal-sm">
+					<div class="modal-content">
+					  <div class="modal-header">
+						<h5 class="modal-title" id="${modalId}-label">Aircraft: ${callsign || hex_ident}</h5>
+						<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+					  </div>
+					  <div class="modal-body">
+						<ul class="list-group list-group-flush small">
+						  <li class="list-group-item"><strong>Hex:</strong> ${hex_ident}</li>
+						  <li class="list-group-item"><strong>Callsign:</strong> ${callsign || "N/A"}</li>
+						  <li class="list-group-item"><strong>Lat/Lon:</strong> ${latitude}, ${longitude}</li>
+						  <li class="list-group-item"><strong>Altitude:</strong> ${altitude || "N/A"} m</li>
+						  <li class="list-group-item"><strong>Speed:</strong> ${ground_speed || "N/A"} kt</li>
+						  <li class="list-group-item"><strong>Track:</strong> ${track || "N/A"}°</li>
+						  <li class="list-group-item"><strong>Vertical Rate:</strong> ${vertical_rate || "N/A"}</li>
+						  <li class="list-group-item"><strong>On Ground:</strong> ${is_on_ground ? "Yes" : "No"}</li>
+						  <li class="list-group-item"><strong>Squawk:</strong> ${squawk || "N/A"}</li>
+						  <li class="list-group-item"><strong>Alert:</strong> ${alert ? "Yes" : "No"}</li>
+						  <li class="list-group-item"><strong>Emergency:</strong> ${emergency ? "Yes" : "No"}</li>
+						</ul>
+					  </div>
+					</div>
+				  </div>
+				</div>
+				`;
+
+				// Append modal to body
+				document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+				// Show modal using Bootstrap
+				const bsModal = new bootstrap.Modal(document.getElementById(modalId));
+				bsModal.show();
+
+				// Remove modal from DOM after it's closed
+				document.getElementById(modalId).addEventListener("hidden.bs.modal", function () {
+					this.remove();
+				});
+			});
+			window.aircraftMarkers.push({ hex_ident, marker });
+		}
+	});
 });
 
 // Listen for a Reaper Node sending a global message

@@ -103,6 +103,7 @@ def sbs1_listener(host='127.0.0.1', port=30003):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.connect((host, port))
             print(f"[*] Connected to dump1090 on {host}:{port}")
+            global aircraft_srd_connected
             aircraft_srd_connected = True
             while True:
                 data = sock.recv(4096)
@@ -130,14 +131,14 @@ def index():
 @app.route('/api/status')
 def api_status():
     return jsonify({
-        "internetConnected": check_internet(),
-        "reaperNodeConnected": reaper_node_connected,
-        "aircraftSrdConnected": aircraft_srd_connected,
-        "reaperNodeName": connected_reaper_node_name,
-        "reaperNodePort": connected_reaper_node_port,
-        "backendVersion": "1.4.1",
-        "frontendVersion": "1.7.76",
-        "systemTime": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+        "internet_connected": check_internet(),
+        "reaper_node_connected": reaper_node_connected,
+        "aircraft_tracker_connected": aircraft_srd_connected,
+        "reaper_node_name": connected_reaper_node_name,
+        "reaper_node_port": connected_reaper_node_port,
+        "backend_version": "1.4.1",
+        "frontend_version": "1.7.76",
+        "system_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
     })
 
 # Plugins API
