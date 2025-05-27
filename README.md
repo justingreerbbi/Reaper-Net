@@ -19,8 +19,6 @@ While the project is not production-ready yet, it offers a glimpse into its capa
 ## Todos
 
 -   Location history for reaper nodes.
--   Add ADS-B support with the ability to marker aircraft friendly or enemy, or unknown as well as add a description. Local storage and server api for saving to local system. [https://airmetar.main.jp/radio/ADS-B%20Decoding%20Guide.pdf]
--   Add proper support for icons for different types of markers.
 -   Finish migrating reaper-node functions to use core API and hooks instead of direct integration.
 -   Start really honing on on structure, API, and exported hooks. Determine what is core and what is a plugin.
 -   Build packer for the app for windows, OSX, and Raspberry. While the system will be already installed on the product, for public, this is the best case.
@@ -33,6 +31,18 @@ While the project is not production-ready yet, it offers a glimpse into its capa
 -   Extendable by plugins using the core API.
 -   AES256 Encryption.
 -   Team Member Tracking.
+
+### Reaper Node v1.0
+
+Reaper Net supports global and direct messaging as well as beacons to update locations.
+
+### Aircraft Tracker v1.0
+
+Reaper Net supports dump1090 on default settings. The current version supports dump1090 integration and aircraft markers on the map along with basic information Future plans include adding in filtering, searching, history data, and the ability to customize specific aircraft.
+
+### Long Range 2.4Ghz Data Transmission v1.0
+
+Reaper Net supports nRF24L01 module for data transmission. Currently this is very early in firmware development but proof of concept was successful in recent tests,
 
 ## GeoTIFF Overlay
 

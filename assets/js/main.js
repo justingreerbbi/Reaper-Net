@@ -469,6 +469,7 @@ window.bus.addEventListener("bus:update_aircraft_markers", (evt) => {
 					  </div>
 					  <div class="modal-body">
 						<ul class="list-group list-group-flush small">
+						  <li class="list-group-item"><strong>Hex ID:</strong> ${hex_ident || "N/A"}</li>
 						  <li class="list-group-item"><strong>Callsign:</strong> ${callsign || "N/A"}</li>
 						  <li class="list-group-item"><strong>Lat/Lon:</strong> ${latitude}, ${longitude}</li>
 						  <li class="list-group-item"><strong>Altitude:</strong> ${altitude || "N/A"} m</li>
