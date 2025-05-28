@@ -32,6 +32,15 @@ While the project is not production-ready yet, it offers a glimpse into its capa
 -   AES256 Encryption.
 -   Team Member Tracking.
 
+### Mapping
+
+The mapping is built to allow for offline maps which is not incorporated just yet.
+
+**ToDos**
+
+-   Add radius layer around user location that can be toggled.
+-   We can keep the aircraft api but it may be better to run it through a socket... :)
+
 ### Reaper Node v1.0
 
 Reaper Net supports global and direct messaging as well as beacons to update locations.
@@ -46,11 +55,21 @@ Reaper Net supports global and direct messaging as well as beacons to update loc
 
 Reaper Net supports dump1090 on default settings. The current version supports dump1090 integration and aircraft markers on the map along with basic information Future plans include adding in filtering, searching, history data, and the ability to customize specific aircraft.
 
+**Features**
+
+-   Historic tracking and logging of all seen aircraft.
+-   Aircraft Lookup (Locally).
+-   If connected to the internet, a aircraft lookup is preformed.
+-   Historic aircraft path.
+
 **ToDos**
 
--   Add in aircraft ICAO lookup to start building known aircraft. This is more for development and DD Building.
--   Add history for aircraft on screen. Selecting will show history of aircraft while in the AO.
--   Add setting to include purge time, DB builder, toggle aircraft, filter, ICAO search, alert on new aircraft/purged aircraft.
+-   Toggle aircraft, filter, ICAO search, alert on new aircraft/purged aircraft.
+-   Toggle labels for aircraft
+-   Historic aircraft path logic is not optimized by any means. A full render is done. This is crap but is a proof of concept.
+-   Add data updating for aircraft info modal live.
+-   Add aircraft data sync so that all aircraft are shared between multiple stations on a mesh rather than a online gateway.
+-   Play audio when a new aircraft is found.
 
 ### Long Range 2.4Ghz Data Transmission v1.0
 

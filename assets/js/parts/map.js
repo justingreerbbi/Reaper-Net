@@ -262,7 +262,7 @@ export function removeUserLocationMarker() {
 export function centerMapOnUserLocation() {
 	if (window.userLocation) {
 		const { latitude, longitude } = window.userLocation;
-		window.map.setView([latitude, longitude]);
+		window.map.setView([latitude, longitude], 8); // Zoom level can be adjusted as needed
 	}
 }
 

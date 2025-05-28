@@ -67,6 +67,7 @@ function updateAircraftMarkersOnMap() {
 		let lat = null;
 		let lon = null;
 		let id = null;
+		let emergency = false;
 
 		// Assign each property if it exists in markerData
 		if ("aircraft_id" in markerData) aircraft_id = markerData.aircraft_id;
@@ -90,6 +91,7 @@ function updateAircraftMarkersOnMap() {
 		if ("lat" in markerData) lat = parseFloat(markerData.lat);
 		if ("lon" in markerData) lon = parseFloat(markerData.lon);
 		if ("id" in markerData) id = markerData.id;
+		if ("emergency" in markerData) emergency = markerData.emergency;
 
 		// Use aircraft_id as the unique marker id, fallback to id if needed
 		const markerId = aircraft_id || id;
@@ -97,16 +99,30 @@ function updateAircraftMarkersOnMap() {
 
 		window.aircraftMapMarkers = window.aircraftMapMarkers || {};
 
+		const label = markerData.callsign || hex_ident || "N/A";
+		const iconColor = emergency ? "#e00" : "#0f0"; // Red for emergency, green otherwise
+
+		// HTML content with label
+		const iconHtml = `
+		<div style="text-align:center;">
+			<div style="width:12px;height:12px;border-radius:50%;background:${emergency};border:1px solid #000;margin:auto;"></div>
+			<div style="font-size:12px;color:#fff;text-shadow:0 0 3px #000;margin-top:2px;">${label}</div>
+		</div>`;
+
+		const icon = L.divIcon({
+			className: "",
+			html: iconHtml,
+			iconSize: [50, 30],
+			iconAnchor: [25, 15], // center the icon at marker point
+		});
+
 		let marker = window.aircraftMapMarkers[markerId];
 		if (!marker) {
-			console.log("Creating new marker:", markerData);
-			// Create new marker
-			marker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(window.map);
+			marker = L.marker([lat, lon], { icon }).addTo(window.map);
 			window.aircraftMapMarkers[markerId] = marker;
 		} else {
-			console.log("Updating existing marker:", markerData);
-			// Animate marker to new position
-			marker.setLatLng([parseFloat(lat), parseFloat(lon)]);
+			marker.setLatLng([lat, lon]);
+			marker.setIcon(icon); // update label if changed
 		}
 	});
 }

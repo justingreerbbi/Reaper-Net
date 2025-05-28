@@ -4,12 +4,13 @@ import socket
 import serial
 import threading
 import webbrowser
-import csv
 import requests
 import serial.tools.list_ports
+import sqlite3
 from flask import Flask, jsonify, send_from_directory, request
 from flask_socketio import SocketIO
 import subprocess
+from datetime import datetime
 
 # === Flask + SocketIO setup ===
 app = Flask(__name__, static_folder='.', static_url_path='')
@@ -22,71 +23,59 @@ connected_reaper_node_port = None
 connected_reaper_node_name = None
 aircraft_srd_connected = False
 
-development_mode = True  # Set to True for development mode
-
 REAPER_NODE_DETECTION_TIMEOUT = 4
 
 # === Aircraft Tracking ===
 aircraft_data = {}
-SBS1_FIELDS = [
-    "message_type", "transmission_type", "session_id", "aircraft_id",
-    "hex_ident", "flight_id", "generated_date", "generated_time",
-    "logged_date", "logged_time", "callsign", "altitude", "ground_speed",
-    "track", "lat", "lon", "vertical_rate", "squawk",
-    "alert", "emergency", "spi", "is_on_ground"
-]
+DB_FILE = 'aircraft_log.db'
 
-CSV_FILE = 'aircraft_log.csv'
-CSV_FIELDS = [
-    "icao", "callsign", "altitude", "lat", "lon", "type", "military", "last_seen",
-    "icao_type", "manufacturer", "owner", "registered_owner_country_iso_name",
-    "registered_owner_operator_flag_code", "adsbdb_last_checked"
-]
+# === SQLite DB Init ===
+def init_db():
+    with sqlite3.connect(DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS aircraft (
+                icao TEXT PRIMARY KEY,
+                callsign TEXT,
+                altitude TEXT,
+                lat TEXT,
+                lon TEXT,
+                type TEXT,
+                military TEXT,
+                last_seen TEXT,
+                icao_type TEXT,
+                manufacturer TEXT,
+                owner TEXT,
+                registered_owner_country_iso_name TEXT,
+                registered_owner_operator_flag_code TEXT,
+                adsbdb_last_checked TEXT
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS aircraft_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                icao TEXT,
+                callsign TEXT,
+                altitude TEXT,
+                lat TEXT,
+                lon TEXT,
+                type TEXT,
+                military TEXT,
+                last_seen TEXT,
+                icao_type TEXT,
+                manufacturer TEXT,
+                owner TEXT,
+                registered_owner_country_iso_name TEXT,
+                registered_owner_operator_flag_code TEXT,
+                adsbdb_last_checked TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.commit()
 
-# === Utility: Check Internet ===
-def check_internet():
-    try:
-        socket.create_connection(("8.8.8.8", 53), timeout=3)
-        return True
-    except OSError:
-        return False
+init_db()
 
-# === CSV Handling ===
-def load_aircraft_from_csv():
-    if os.path.exists(CSV_FILE):
-        with open(CSV_FILE, newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                aircraft_data[row["icao"]] = row
-
-def save_aircraft_to_csv(icao, data):
-    updated = False
-    rows = []
-
-    if os.path.exists(CSV_FILE):
-        with open(CSV_FILE, newline='') as csvfile:
-            rows = list(csv.DictReader(csvfile))
-
-    for row in rows:
-        if row["icao"] == icao:
-            for key, value in data.items():
-                if value:  # only update if new value is non-empty
-                    row[key] = value
-            updated = True
-            break
-
-    if not updated:
-        # Fill in all missing fields so CSV stays consistent
-        full_data = {field: data.get(field, "") for field in CSV_FIELDS}
-        rows.append(full_data)
-
-    with open(CSV_FILE, 'w', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=CSV_FIELDS)
-        writer.writeheader()
-        writer.writerows(rows)
-
-
-# === ICAO Aircraft Metadata API (for quick lookup during ingestion)
+# === ICAO Aircraft Metadata API ===
 def lookup_aircraft_info(icao):
     try:
         url = f"https://opensky-network.org/api/metadata/icao/{icao}"
@@ -101,51 +90,62 @@ def lookup_aircraft_info(icao):
         print(f"[!] Lookup failed for {icao}: {e}")
     return {"type": "Unknown", "military": "Unknown"}
 
-# === Background: Enrich CSV with ADSBdb data
+## Clean the database by removing old entries
+def clean_aircraft_db():
+    while True:
+        with sqlite3.connect(DB_FILE) as conn:
+            now = datetime.utcnow()
+            print(f"[CLEANUP] Cleaning aircraft database at {now.strftime('%Y-%m-%d %H:%M:%S')}")
+            cursor = conn.cursor()
+            cutoff = datetime.utcnow() - timedelta(minutes=30)
+            cursor.execute('''
+                DELETE FROM aircraft WHERE last_seen < ?
+            ''', (cutoff.strftime("%Y-%m-%d %H:%M:%S"),))
+            cursor.execute('''
+                DELETE FROM aircraft_history WHERE last_seen < ?
+            ''', (cutoff.strftime("%Y-%m-%d %H:%M:%S"),))
+            conn.commit()
+        time.sleep(60 * 1)  # Clean every 30 minutes
+        
+# === Enrich Aircraft Data from ADSBdb ===
 def enrich_aircraft_data():
     while True:
-        if not os.path.exists(CSV_FILE):
-            time.sleep(120)
-            continue
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM aircraft WHERE adsbdb_last_checked IS NULL")
+            rows = cursor.fetchall()
 
-        updated_rows = []
-        changed = False
-        now_str = time.strftime("%Y-%m-%d %H:%M:%S")
-
-        with open(CSV_FILE, newline='') as csvfile:
-            rows = list(csv.DictReader(csvfile))
-
-        for row in rows:
-            if row.get("adsbdb_last_checked"):
-                updated_rows.append(row)
-                continue
-
-            icao = row["icao"]
-            try:
-                url = f"https://api.adsbdb.com/v0/aircraft/{icao}"
-                r = requests.get(url, timeout=5)
-                if r.status_code == 200:
-                    result = r.json()
-                    aircraft = result.get("response", {}).get("aircraft", {})
-
-                    if aircraft:
-                        row["icao_type"] = aircraft.get("icao_type", "")
-                        row["manufacturer"] = aircraft.get("manufacturer", "")
-                        row["owner"] = aircraft.get("registered_owner", "")
-                        row["registered_owner_country_iso_name"] = aircraft.get("registered_owner_country_iso_name", "")
-                        row["registered_owner_operator_flag_code"] = aircraft.get("registered_owner_operator_flag_code", "")
-                        row["adsbdb_last_checked"] = now_str
-                        changed = True
-            except Exception as e:
-                print(f"[!] ADSBdb lookup failed for {icao}: {e}")
-            updated_rows.append(row)
-
-        if changed:
-            with open(CSV_FILE, 'w', newline='') as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=CSV_FIELDS)
-                writer.writeheader()
-                writer.writerows(updated_rows)
-
+            now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+            for row in rows:
+                icao = row[0]
+                try:
+                    url = f"https://api.adsbdb.com/v0/aircraft/{icao}"
+                    r = requests.get(url, timeout=5)
+                    if r.status_code == 200:
+                        result = r.json()
+                        aircraft = result.get("response", {}).get("aircraft", {})
+                        if aircraft:
+                            cursor.execute('''
+                                UPDATE aircraft SET
+                                    icao_type = ?,
+                                    manufacturer = ?,
+                                    owner = ?,
+                                    registered_owner_country_iso_name = ?,
+                                    registered_owner_operator_flag_code = ?,
+                                    adsbdb_last_checked = ?
+                                WHERE icao = ?
+                            ''', (
+                                aircraft.get("icao_type", ""),
+                                aircraft.get("manufacturer", ""),
+                                aircraft.get("registered_owner", ""),
+                                aircraft.get("registered_owner_country_iso_name", ""),
+                                aircraft.get("registered_owner_operator_flag_code", ""),
+                                now_str,
+                                icao
+                            ))
+                except Exception as e:
+                    print(f"[!] ADSBdb lookup failed for {icao}: {e}")
+            conn.commit()
         time.sleep(120)
 
 # === Detect and Connect to Reaper Node ===
@@ -188,80 +188,95 @@ def serial_reader_thread(ser):
 
 # === SBS1 Listener ===
 def parse_sbs1_line(line):
-    parts = line.strip().split(',')
-    if len(parts) < 22:
+    fields = line.strip().split(',')
+    if len(fields) < 22:
         return None
-    return dict(zip(SBS1_FIELDS, parts))
+    return dict(zip([
+        "message_type", "transmission_type", "session_id", "aircraft_id",
+        "hex_ident", "flight_id", "generated_date", "generated_time",
+        "logged_date", "logged_time", "callsign", "altitude", "ground_speed",
+        "track", "lat", "lon", "vertical_rate", "squawk",
+        "alert", "emergency", "spi", "is_on_ground"
+    ], fields))
 
 def sbs1_listener(host='127.0.0.1', port=30003):
+    global aircraft_srd_connected
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.connect((host, port))
             print(f"[*] Connected to dump1090 on {host}:{port}")
-            global aircraft_srd_connected
             aircraft_srd_connected = True
             while True:
                 data = sock.recv(4096)
                 if not data:
                     break
                 lines = data.decode(errors='ignore').splitlines()
+                now = datetime.utcnow()
                 for line in lines:
                     parsed = parse_sbs1_line(line)
                     if parsed and parsed.get("hex_ident"):
                         icao = parsed["hex_ident"]
                         ac = aircraft_data.setdefault(icao, {})
                         ac.update({k: v for k, v in parsed.items() if v})
-                        ac["last_seen"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                        ac["last_seen"] = now.strftime("%Y-%m-%d %H:%M:%S")
 
                         if "type" not in ac:
                             info = lookup_aircraft_info(icao)
                             ac["type"] = info["type"]
                             ac["military"] = info["military"]
 
-                        csv_row = {
-                            "icao": icao,
-                            "callsign": ac.get("callsign", ""),
-                            "altitude": ac.get("altitude", ""),
-                            "lat": ac.get("lat", ""),
-                            "lon": ac.get("lon", ""),
-                            "type": ac.get("type", "Unknown"),
-                            "military": ac.get("military", "Unknown"),
-                            "last_seen": ac["last_seen"],
-                            "icao_type": ac.get("icao_type", ""),
-                            "manufacturer": ac.get("manufacturer", ""),
-                            "owner": ac.get("owner", ""),
-                            "registered_owner_country_iso_name": ac.get("registered_owner_country_iso_name", ""),
-                            "registered_owner_operator_flag_code": ac.get("registered_owner_operator_flag_code", ""),
-                            "adsbdb_last_checked": ac.get("adsbdb_last_checked", "")
-                        }
-                        save_aircraft_to_csv(icao, csv_row)
+                        with sqlite3.connect(DB_FILE) as conn:
+                            cursor = conn.cursor()
+                            cursor.execute('''
+                                INSERT INTO aircraft (icao, callsign, altitude, lat, lon, type, military, last_seen)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                                ON CONFLICT(icao) DO UPDATE SET
+                                    callsign=excluded.callsign,
+                                    altitude=excluded.altitude,
+                                    lat=excluded.lat,
+                                    lon=excluded.lon,
+                                    type=excluded.type,
+                                    military=excluded.military,
+                                    last_seen=excluded.last_seen
+                            ''', (
+                                icao, ac.get("callsign", ""), ac.get("altitude", ""), ac.get("lat", ""), ac.get("lon", ""),
+                                ac.get("type", "Unknown"), ac.get("military", "Unknown"), ac["last_seen"]
+                            ))
+
+                            cursor.execute('''
+                                INSERT INTO aircraft_history (icao, callsign, altitude, lat, lon, type, military, last_seen)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                            ''', (
+                                icao, ac.get("callsign", ""), ac.get("altitude", ""), ac.get("lat", ""), ac.get("lon", ""),
+                                ac.get("type", "Unknown"), ac.get("military", "Unknown"), ac["last_seen"]
+                            ))
+                            conn.commit()
+
+
     except Exception as e:
         print(f"[!] SBS1 error: {e}")
+
 
 # === Flask Routes ===
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
 
+## Server Status API
 @app.route('/api/status')
 def api_status():
     return jsonify({
-        "internet_connected": check_internet(),
+        "internet_connected": True,
         "reaper_node_connected": reaper_node_connected,
         "aircraft_tracker_connected": aircraft_srd_connected,
         "reaper_node_name": connected_reaper_node_name,
         "reaper_node_port": connected_reaper_node_port,
         "backend_version": "1.4.1",
         "frontend_version": "1.7.76",
-        "system_time": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "system_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     })
 
-@app.route('/api/plugins')
-def list_plugins():
-    plugins_dir = os.path.join(app.root_path, 'plugins')
-    plugin_files = [f for f in os.listdir(plugins_dir) if f.endswith('.js')]
-    return jsonify([os.path.splitext(p)[0] for p in plugin_files])
-
+## Get Aircraft API
 @app.route('/api/aircraft')
 def get_aircraft():
     cutoff = time.time() - 60
@@ -277,6 +292,21 @@ def get_aircraft():
                 continue
     return jsonify(filtered)
 
+## Aircraft History API
+@app.route('/api/aircraft/history/<icao>')
+def get_aircraft_history(icao):
+    print(f"[API] Fetching history for {icao}")
+    with sqlite3.connect(DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT * FROM aircraft_history WHERE icao = ? ORDER BY timestamp DESC
+        ''', (icao,))
+        rows = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        history = [dict(zip(columns, row)) for row in rows]
+    return jsonify(history)
+
+## Send Reaper Node Command API
 @socketio.on('send_reaper_node_command')
 def handle_send_command(data):
     print(f"[RECEIVED] {data}")
@@ -291,12 +321,9 @@ def start_server():
 
 # === Main Entry ===
 if __name__ == '__main__':
-    print("")
-    print("=========================================")
+    print("\n=========================================")
     print(" Reaper Net - Serial Web Bridge v1.0")
     print("=========================================\n")
-
-    load_aircraft_from_csv()
 
     devices = auto_find_reaper_mesh_node()
     if devices:
@@ -312,9 +339,8 @@ if __name__ == '__main__':
 
     threading.Thread(target=start_server, daemon=True).start()
     threading.Thread(target=sbs1_listener, daemon=True).start()
-
-    if(development_mode):
-        threading.Thread(target=enrich_aircraft_data, daemon=True).start()
+    threading.Thread(target=enrich_aircraft_data, daemon=True).start()
+    #threading.Thread(target=clean_aircraft_db, daemon=True).start()
 
     webbrowser.open("http://localhost:1776")
 

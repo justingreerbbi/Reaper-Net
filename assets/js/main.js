@@ -17,6 +17,11 @@ window.nodeMarkers = [];
 window.aircraftMarkers = [];
 window.aircraftTimer = null;
 
+// Global variable for a selected aircraft in the aircraft tracker.
+window.selectedAircraft = null;
+window.selectedAircraftHistoricPath = null;
+window.selectedAircraftModal = null;
+
 // Encryption Keys for the app. This is not secure by any means on the device itself. The idea is the encrypt the data being transmitted and assumes
 // the device is secure. The keys are generated on the device and stored in localStorage.
 // If the keys are changed, any messages sent with the old keys will not be able to be decrypted.
@@ -47,6 +52,10 @@ let appSettings = {
 	startupMapZoom: 15,
 	showNewGroupMessagePopup: true,
 	showNewDirectMessagePopup: true,
+	updateAircraftInterval: 1000, // miliseconds
+	selectedAircraftHistoricPathEnabled: true,
+	selectedAircraftHistoricPathColor: "#2196f3",
+	selectedAircraftHistoricPathWeight: 2,
 };
 
 function getServerStatusAndUpdate() {
@@ -60,7 +69,7 @@ function getServerStatusAndUpdate() {
 				updateAircraft(); // Initial update
 				window.aircraftTimer = setInterval(() => {
 					updateAircraft();
-				}, 1000); // Update aircraft every 5 seconds
+				}, appSettings.updateAircraftInterval); // Update aircraft every 5 seconds
 			} else if (window.aircraftTimer && !status.aircraft_tracker_connected) {
 				clearInterval(window.aircraftTimer);
 				window.aircraftTimer = null;
@@ -199,6 +208,80 @@ function updateNodeMarkers() {
 			window.nodeMarkers.push({ device_name, marker });
 		}
 	});
+}
+
+/**
+ * Update selected aircraft modal content if it is open
+ * @param {*} markerData
+ * @returns
+ */
+function updateAircraftModalContent(markerData) {
+	if (!window.selectedAircraft) return;
+	if (markerData.hex_ident !== window.selectedAircraft) return;
+
+	const modal = document.getElementById(`aircraft-modal-${markerData.hex_ident}`);
+	if (!modal) return;
+
+	// Update modal content with latest markerData values
+	const updateListItem = (label, value) => {
+		const items = modal.querySelectorAll(".list-group-item");
+		items.forEach((item) => {
+			const strong = item.querySelector("strong");
+			if (strong && strong.textContent.replace(":", "") === label) {
+				strong.nextSibling.nodeValue = ` ${value}`;
+			}
+		});
+	};
+
+	updateListItem("Callsign", markerData.callsign || "N/A");
+	updateListItem("Lat/Lon", `${markerData.lat}, ${markerData.lon}`);
+	updateListItem("Altitude", markerData.altitude || "N/A");
+	updateListItem("Speed", markerData.ground_speed || "N/A");
+	updateListItem("Track", markerData.track || "N/A");
+	updateListItem("Vertical Rate", markerData.vertical_rate || "N/A");
+	updateListItem("On Ground", markerData.is_on_ground ? "Yes" : "No");
+	updateListItem("Squawk", markerData.squawk || "N/A");
+	updateListItem("Alert", markerData.alert ? "Yes" : "No");
+	updateListItem("Emergency", markerData.emergency ? "Yes" : "No");
+}
+
+/**
+ * Track Selected Aircraft.
+ * If there is a selected aircraft, then create a line on the map with the aircraft's historic path.
+ */
+function updateSelectedAircraft() {
+	if (!window.selectedAircraft) {
+		if (window.selectedAircraftHistoricPath) {
+			window.map.removeLayer(window.selectedAircraftHistoricPath);
+			window.selectedAircraftHistoricPath = null;
+		}
+		return;
+	}
+
+	if (!appSettings.selectedAircraftHistoricPathEnabled) return;
+
+	fetch(`/api/aircraft/history/${window.selectedAircraft}`)
+		.then((response) => response.json())
+		.then((historyData) => {
+			if (Array.isArray(historyData) && historyData.length > 0) {
+				const latLngs = historyData.filter((entry) => entry.lat != null && entry.lon != null && entry.lat !== "" && entry.lon !== "").map((entry) => [entry.lat, entry.lon]);
+
+				if (window.selectedAircraftHistoricPath) {
+					window.selectedAircraftHistoricPath.setLatLngs(latLngs);
+				} else {
+					window.selectedAircraftHistoricPath = L.polyline(latLngs, {
+						color: appSettings.selectedAircraftHistoricPathColor,
+						weight: appSettings.selectedAircraftHistoricPathWeight,
+						opacity: 1,
+					}).addTo(window.map);
+				}
+			} else {
+				console.warn(`No history data found for aircraft ${window.selectedAircraft}.`);
+			}
+		})
+		.catch((error) => {
+			console.warn(`Error fetching history for aircraft ${window.selectedAircraft}:`, error);
+		});
 }
 
 /**
@@ -407,7 +490,7 @@ window.bus.addEventListener("bus:update_aircraft_markers", (evt) => {
 			is_on_ground = null,
 			squawk = null,
 			alert = null,
-			emergency = null,
+			emergency = false,
 			spi = null,
 			flight_id = null,
 			aircraft_id = null,
@@ -444,19 +527,46 @@ window.bus.addEventListener("bus:update_aircraft_markers", (evt) => {
 		} else {
 			// Create new marker
 			const rotation = parseInt(track) || 0; // Default to 0 if track is not a number
+			const labelText = callsign || hex_ident || "N/A";
+			const iconColor = "#2196f3"; // @todo: Make dynamic based on aircraft type or status
 			const aircraftIcon = L.divIcon({
 				className: "custom-aircraft-icon",
-				iconSize: [24, 24],
-				iconAnchor: [12, 12],
-				html: `<svg width="25" height="25" viewBox="0 0 20 20" style="transform: rotate(${rotation}deg);"><polygon points="10,2 13,18 10,15 7,18" fill="#2196f3" stroke="#fff" stroke-width="1"/></svg>`,
+				iconSize: [40, 40],
+				iconAnchor: [20, 28], // Move anchor down to shift icon lower
+				html: `
+					<div style="text-align: center; margin-top: 15px;">
+						<svg width="25" height="25" viewBox="0 0 40 40" style="transform: rotate(${rotation}deg);">
+							<!-- Fuselage -->
+							<rect x="18" y="6" width="4" height="20" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
+							<!-- Nose -->
+							<polygon points="20,2 23,10 17,10" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
+							<!-- Tail -->
+							<polygon points="20,26 24,38 16,38" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
+							<!-- Left Wing -->
+							<polygon points="18,16 2,22 18,22" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
+							<!-- Right Wing -->
+							<polygon points="22,16 38,22 22,22" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
+						</svg>
+						<div style="font-size: 12px; color: white; text-shadow: 0 0 3px black; margin-top: 2px;">
+							${labelText}
+						</div>
+					</div>
+				`,
 			});
 			const marker = L.marker([latitude, longitude], { icon: aircraftIcon, title: callsign }).addTo(window.map);
 			marker.on("click", () => {
+				if (selectedAircraft === hex_ident) return; // If the same aircraft is clicked, do nothing
+
+				window.selectedAircraft = hex_ident;
+				updateSelectedAircraft(); // Update the historic path for the selected aircraft
+
 				const modalId = `aircraft-modal-${hex_ident}`;
 				let modal = document.getElementById(modalId);
 
 				// Remove existing modal if present
-				if (modal) modal.remove();
+				document.querySelectorAll(".modal.show").forEach((openModal) => {
+					openModal.remove();
+				});
 
 				// Create modal HTML
 				const modalHtml = `
@@ -496,10 +606,17 @@ window.bus.addEventListener("bus:update_aircraft_markers", (evt) => {
 
 				// Remove modal from DOM after it's closed
 				document.getElementById(modalId).addEventListener("hidden.bs.modal", function () {
+					window.selectedAircraft = null; // Clear selected aircraft
+					updateSelectedAircraft(); // Refresh aircraft markers
 					this.remove();
 				});
 			});
 			window.aircraftMarkers.push({ hex_ident, marker });
+
+			if (selectedAircraft === hex_ident) {
+				updateSelectedAircraft(); // Update the historic path for the selected aircraft
+				updateAircraftModalContent(markerData);
+			}
 		}
 	});
 });
