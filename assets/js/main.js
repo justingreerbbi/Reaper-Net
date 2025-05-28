@@ -571,7 +571,7 @@ window.bus.addEventListener("bus:update_aircraft_markers", (evt) => {
 				// Create modal HTML
 				const modalHtml = `
 				<div class="modal fade" id="${modalId}" tabindex="-1" aria-labelledby="${modalId}-label" aria-hidden="true">
-				  <div class="modal-dialog modal-dialog-centered modal-sm">
+				  <div class="modal-dialog modal-dialog-centered">
 					<div class="modal-content">
 					  <div class="modal-header">
 						<h5 class="modal-title" id="${modalId}-label">Aircraft: ${callsign || hex_ident}</h5>
