@@ -4,7 +4,7 @@ import { makeDraggable } from "./parts/helpers.js";
 import { initializeReaperNodeSocket, updateReaperNodeContent, reaperNodeSocket, openGlobalChatWindow, sendCommandToReaperNode } from "./parts/reaper-node.js";
 import { showPopupNotification } from "./parts/notifications.js";
 import { updateUserLocation, updateUserLocationOnMap, setFollowUserLocation, toggleFollowUserLocation, isFollowingUserLocation } from "./parts/map.js";
-import { updateAircraft } from "./parts/aircraft-tracker.js";
+import { initAircraftTracker } from "./parts/aircraft-tracker.js";
 
 // A simple lightweight event bus for communication between components.
 window.bus = new EventTarget();
@@ -14,6 +14,9 @@ window.markers = [];
 window.userLocation = null;
 window.userLocationMarker = null;
 window.nodeMarkers = [];
+
+// Global variables for aircraft tracking
+window.aircraftData = [];
 window.aircraftMarkers = [];
 window.aircraftTimer = null;
 
@@ -63,17 +66,6 @@ function getServerStatusAndUpdate() {
 		.then((res) => res.json())
 		.then((data) => {
 			Object.assign(status, data);
-
-			// Handle aircraft tracker updates and timer
-			if (!window.aircraftTimer && status.aircraft_tracker_connected) {
-				updateAircraft(); // Initial update
-				window.aircraftTimer = setInterval(() => {
-					updateAircraft();
-				}, appSettings.updateAircraftInterval); // Update aircraft every 5 seconds
-			} else if (window.aircraftTimer && !status.aircraft_tracker_connected) {
-				clearInterval(window.aircraftTimer);
-				window.aircraftTimer = null;
-			}
 
 			const updateIcon = (selector, ok) => {
 				document.querySelector(selector).innerHTML = `<i class="bi bi-${ok ? "check" : "x"}-square-fill text-${ok ? "success" : "danger"}"></i>`;
@@ -418,6 +410,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// Fetch the initial updates ftom the server.
 	fetchUpdates();
+	initAircraftTracker(); // Initialize the aircraft tracker module.
 });
 
 /**
@@ -467,162 +460,119 @@ window.bus.addEventListener("bus:send_reaper_command", (cmd) => {
 	}
 });
 
-// Listen for Reaper Node Command Send
 window.bus.addEventListener("bus:update_aircraft_markers", (evt) => {
-	window.aircraftMarkers.forEach((m) => {
-		if (m.marker && window.map.hasLayer(m.marker)) {
-			window.map.removeLayer(m.marker);
-		}
-	});
+	let aircraftArray = [];
+
+	// Normalize incoming data
+	if (evt.detail[0] && typeof evt.detail === "object" && !Array.isArray(evt.detail[0])) {
+		aircraftArray = Object.values(evt.detail[0]);
+	} else if (Array.isArray(evt.detail[0])) {
+		aircraftArray = evt.detail[0];
+	}
+
+	// Track existing markers by hex_ident
+	const existingMarkersMap = new Map(window.aircraftMarkers.map(m => [m.hex_ident, m.marker]));
 	window.aircraftMarkers = [];
 
-	window.aircraftMarkers = evt.detail;
-	evt.detail.forEach((markerData) => {
+	aircraftArray.forEach((markerData) => {
 		const {
-			hex_ident = null,
-			lat = null,
-			lon = null,
-			altitude = null,
-			callsign = null,
-			ground_speed = null,
-			track = null,
-			vertical_rate = null,
-			is_on_ground = null,
-			squawk = null,
-			alert = null,
-			emergency = false,
-			spi = null,
-			flight_id = null,
-			aircraft_id = null,
-			session_id = null,
-			message_type = null,
-			generated_date = null,
-			generated_time = null,
-			last_seen = null,
-			logged_date = null,
-			logged_time = null,
+			hex_ident, lat, lon, altitude, callsign, ground_speed, track,
+			vertical_rate, is_on_ground, squawk, alert, emergency
 		} = markerData;
 
-		//console.log("Processing Aircraft Marker:", markerData);
-
-		// Skip if lat or lon is missing
-		if (lat === null || lon === null) return;
-
-		// Skip if logged_time is older than 5 minutes
-		if (logged_time && logged_date) {
-			const now = new Date();
-			const markerDate = new Date(`${logged_date}T${logged_time}`);
-			const diffMs = now - markerDate;
-			if (diffMs > 5 * 60 * 1000) return;
-		}
+		if (!lat || !lon || !hex_ident || /^0+$/.test(hex_ident)) return;
 
 		const latitude = parseFloat(lat);
 		const longitude = parseFloat(lon);
-		if (!hex_ident || /^0+$/.test(hex_ident)) return;
 
-		let markerObj = window.aircraftMarkers.find((m) => m.hex_ident === hex_ident);
-
-		if (markerObj && markerObj.marker) {
-			markerObj.marker.setLatLng([latitude, longitude]);
+		let marker = existingMarkersMap.get(hex_ident);
+		if (marker) {
+			// Update existing marker location
+			marker.setLatLng([latitude, longitude]);
 		} else {
 			// Create new marker
-			const rotation = parseInt(track) || 0; // Default to 0 if track is not a number
-			const labelText = callsign || hex_ident || "N/A";
-			const iconColor = "#2196f3"; // @todo: Make dynamic based on aircraft type or status
+			const rotation = parseInt(track) || 0;
+			const iconColor = "#2196f3";
 			const aircraftIcon = L.divIcon({
 				className: "custom-aircraft-icon",
 				iconSize: [40, 40],
-				iconAnchor: [20, 28], // Move anchor down to shift icon lower
+				iconAnchor: [20, 28],
 				html: `
 					<div style="text-align: center; margin-top: 15px;">
 						<svg width="25" height="25" viewBox="0 0 40 40" style="transform: rotate(${rotation}deg);">
-							<!-- Fuselage -->
 							<rect x="18" y="6" width="4" height="20" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
-							<!-- Nose -->
 							<polygon points="20,2 23,10 17,10" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
-							<!-- Tail -->
 							<polygon points="20,26 24,38 16,38" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
-							<!-- Left Wing -->
 							<polygon points="18,16 2,22 18,22" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
-							<!-- Right Wing -->
 							<polygon points="22,16 38,22 22,22" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
 						</svg>
-						<div style="font-size: 12px; color: white; text-shadow: 0 0 3px black; margin-top: 2px;">
-							${labelText}
-						</div>
+						<div style="font-size: 12px; color: white; text-shadow: 0 0 3px black;">${callsign || hex_ident}</div>
+						<div style="font-size: 12px; color: white; text-shadow: 0 0 3px black;">${altitude || "N/A"}</div>
 					</div>
-				`,
+				`
 			});
-			const marker = L.marker([latitude, longitude], { icon: aircraftIcon, title: callsign }).addTo(window.map);
+
+			marker = L.marker([latitude, longitude], { icon: aircraftIcon, title: callsign }).addTo(window.map);
 			marker.on("click", () => {
-				if (selectedAircraft === hex_ident) return; // If the same aircraft is clicked, do nothing
+				if (window.selectedAircraft === hex_ident) return;
 
 				window.selectedAircraft = hex_ident;
-				updateSelectedAircraft(); // Update the historic path for the selected aircraft
+				updateSelectedAircraft();
+
+				// Remove existing modals
+				document.querySelectorAll(".modal.show").forEach((m) => m.remove());
 
 				const modalId = `aircraft-modal-${hex_ident}`;
-				let modal = document.getElementById(modalId);
-
-				// Remove existing modal if present
-				document.querySelectorAll(".modal.show").forEach((openModal) => {
-					openModal.remove();
-				});
-
-				// Create modal HTML
 				const modalHtml = `
-				<div class="modal fade" id="${modalId}" tabindex="-1" aria-labelledby="${modalId}-label" aria-hidden="true">
-				  <div class="modal-dialog modal-dialog-centered">
-					<div class="modal-content">
-					  <div class="modal-header">
-						<h5 class="modal-title" id="${modalId}-label">Aircraft: ${callsign || hex_ident}</h5>
-						<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-					  </div>
-					  <div class="modal-body">
-						<ul class="list-group list-group-flush small">
-						  <li class="list-group-item"><strong>Hex ID:</strong> ${hex_ident || "N/A"}</li>
-						  <li class="list-group-item"><strong>Callsign:</strong> ${callsign || "N/A"}</li>
-						  <li class="list-group-item"><strong>Lat/Lon:</strong> ${latitude}, ${longitude}</li>
-						  <li class="list-group-item"><strong>Altitude:</strong> ${altitude || "N/A"} m</li>
-						  <li class="list-group-item"><strong>Speed:</strong> ${ground_speed || "N/A"} kt</li>
-						  <li class="list-group-item"><strong>Track:</strong> ${track || "N/A"}°</li>
-						  <li class="list-group-item"><strong>Vertical Rate:</strong> ${vertical_rate || "N/A"}</li>
-						  <li class="list-group-item"><strong>On Ground:</strong> ${is_on_ground ? "Yes" : "No"}</li>
-						  <li class="list-group-item"><strong>Squawk:</strong> ${squawk || "N/A"}</li>
-						  <li class="list-group-item"><strong>Alert:</strong> ${alert ? "Yes" : "No"}</li>
-						  <li class="list-group-item"><strong>Emergency:</strong> ${emergency ? "Yes" : "No"}</li>
-						</ul>
+					<div class="modal fade" id="${modalId}" tabindex="-1">
+					  <div class="modal-dialog modal-dialog-centered">
+						<div class="modal-content">
+						  <div class="modal-header">
+							<h5 class="modal-title">Aircraft: ${callsign || hex_ident}</h5>
+							<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+						  </div>
+						  <div class="modal-body">
+							<ul class="list-group small">
+							  <li class="list-group-item"><strong>Hex ID:</strong> ${hex_ident}</li>
+							  <li class="list-group-item"><strong>Callsign:</strong> ${callsign || "N/A"}</li>
+							  <li class="list-group-item"><strong>Lat/Lon:</strong> ${latitude}, ${longitude}</li>
+							  <li class="list-group-item"><strong>Altitude:</strong> ${altitude || "N/A"} m</li>
+							  <li class="list-group-item"><strong>Speed:</strong> ${ground_speed || "N/A"} kt</li>
+							  <li class="list-group-item"><strong>Track:</strong> ${track || "N/A"}°</li>
+							  <li class="list-group-item"><strong>Vertical Rate:</strong> ${vertical_rate || "N/A"}</li>
+							  <li class="list-group-item"><strong>On Ground:</strong> ${is_on_ground ? "Yes" : "No"}</li>
+							  <li class="list-group-item"><strong>Squawk:</strong> ${squawk || "N/A"}</li>
+							  <li class="list-group-item"><strong>Alert:</strong> ${alert ? "Yes" : "No"}</li>
+							  <li class="list-group-item"><strong>Emergency:</strong> ${emergency ? "Yes" : "No"}</li>
+							</ul>
+						  </div>
+						</div>
 					  </div>
 					</div>
-				  </div>
-				</div>
 				`;
-
-				// Append modal to body
 				document.body.insertAdjacentHTML("beforeend", modalHtml);
-
-				// Show modal using Bootstrap
 				const bsModal = new bootstrap.Modal(document.getElementById(modalId));
 				bsModal.show();
-
-				// Remove modal from DOM after it's closed
 				document.getElementById(modalId).addEventListener("hidden.bs.modal", function () {
-					window.selectedAircraft = null; // Clear selected aircraft
-					updateSelectedAircraft(); // Refresh aircraft markers
+					window.selectedAircraft = null;
+					updateSelectedAircraft();
 					this.remove();
 				});
 			});
-			window.aircraftMarkers.push({ hex_ident, marker });
+		}
 
-			if (selectedAircraft === hex_ident) {
-				updateSelectedAircraft(); // Update the historic path for the selected aircraft
-				updateAircraftModalContent(markerData);
-			}
+		window.aircraftMarkers.push({ hex_ident, marker });
+
+		if (window.selectedAircraft === hex_ident) {
+			updateSelectedAircraft();
+			updateAircraftModalContent(markerData);
 		}
 	});
 });
 
+
 // Listen for a Reaper Node sending a global message
-window.bus.addEventListener("bus:reaper_node_send_global_message", (msg) => {});
+window.bus.addEventListener("bus:reaper_node_send_global_message", (msg) => { });
 
 // Listen for a Reaper Node sending a direct message
 window.bus.addEventListener("bus:reaper_node_send_direct_message", (msg) => {
@@ -630,4 +580,4 @@ window.bus.addEventListener("bus:reaper_node_send_direct_message", (msg) => {
 });
 
 // Listen for a ACK Confirm for a message
-window.bus.addEventListener("bus:reaper_node_ack_confirm", (msg) => {});
+window.bus.addEventListener("bus:reaper_node_ack_confirm", (msg) => { });

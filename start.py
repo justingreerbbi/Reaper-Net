@@ -29,6 +29,13 @@ REAPER_NODE_DETECTION_TIMEOUT = 4
 aircraft_data = {}
 DB_FILE = 'aircraft_log.db'
 
+# === Application Settings ===
+appSettings = {
+    "aircraft_data_purge_cutoff": 60,  # Purge aircraft data older than this many seconds.
+    "keep_aircraft_history_after_purge": False,  # Keep aircraft history in the database after a purge.
+    "archive_aircraft_history": False,  # When purging the aircraft from memoery and the database, archive the hostory in the system logs.
+}
+
 # === SQLite DB Init ===
 def init_db():
     with sqlite3.connect(DB_FILE) as conn:
@@ -186,6 +193,13 @@ def serial_reader_thread(ser):
             break
         time.sleep(0.05)
 
+# === Emit aircraft data to the socket ===
+def emit_aircraft_data():
+    while True:
+        if aircraft_data:
+            socketio.emit('aircraft_data', {'data': aircraft_data})
+        time.sleep(0.5)  # Emit every 1 seconds
+
 # === SBS1 Listener ===
 def parse_sbs1_line(line):
     fields = line.strip().split(',')
@@ -211,6 +225,7 @@ def sbs1_listener(host='127.0.0.1', port=30003):
                 if not data:
                     break
                 lines = data.decode(errors='ignore').splitlines()
+
                 now = datetime.utcnow()
                 for line in lines:
                     parsed = parse_sbs1_line(line)
@@ -251,6 +266,22 @@ def sbs1_listener(host='127.0.0.1', port=30003):
                                 ac.get("type", "Unknown"), ac.get("military", "Unknown"), ac["last_seen"]
                             ))
                             conn.commit()
+
+                        # Remove stale aircraft from aircraft_data
+                        stale_cutoff = time.time() - appSettings["aircraft_data_purge_cutoff"]
+                        to_remove = []
+                        for k, v in aircraft_data.items():
+                            last_seen = v.get("last_seen")
+                            if last_seen:
+                                try:
+                                    ts = time.mktime(time.strptime(last_seen, "%Y-%m-%d %H:%M:%S"))
+                                    if ts < stale_cutoff:
+                                        to_remove.append(k)
+                                except Exception:
+                                    continue
+                        for k in to_remove:
+                            del aircraft_data[k]
+                        
 
 
     except Exception as e:
@@ -337,11 +368,19 @@ if __name__ == '__main__':
     else:
         print("No Reaper Mesh Node detected.")
 
+    ## Start the server
     threading.Thread(target=start_server, daemon=True).start()
-    threading.Thread(target=sbs1_listener, daemon=True).start()
-    threading.Thread(target=enrich_aircraft_data, daemon=True).start()
-    #threading.Thread(target=clean_aircraft_db, daemon=True).start()
 
+    # Start the aircraft connection and logic
+    threading.Thread(target=sbs1_listener, daemon=True).start()
+
+    # Set threading to update aircraft data in the database with real information from outside resources if allowed and connected to the internet.
+    threading.Thread(target=enrich_aircraft_data, daemon=True).start()
+
+    # Set threading to emit aircraft on a regular interval
+    threading.Thread(target=emit_aircraft_data, daemon=True).start()
+
+    # For development purposes, open the web browser automatically.
     webbrowser.open("http://localhost:1776")
 
     try:
