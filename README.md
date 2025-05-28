@@ -66,10 +66,10 @@ Reaper Net supports dump1090 on default settings. The current version supports d
 
 -   Toggle aircraft, filter, ICAO search, alert on new aircraft/purged aircraft.
 -   Toggle labels for aircraft
--   Historic aircraft path logic is not optimized by any means. A full render is done. This is crap but is a proof of concept.
 -   Add data updating for aircraft info modal live.
 -   Add aircraft data sync so that all aircraft are shared between multiple stations on a mesh rather than a online gateway.
 -   Play audio when a new aircraft is found.
+-   Fix callsign update when the callsign updates even though the marker is on the map..?
 
 ### Long Range 2.4Ghz Data Transmission v1.0
 

@@ -470,9 +470,17 @@ window.bus.addEventListener("bus:update_aircraft_markers", (evt) => {
 		aircraftArray = evt.detail[0];
 	}
 
-	// Track existing markers by hex_ident
-	const existingMarkersMap = new Map(window.aircraftMarkers.map(m => [m.hex_ident, m.marker]));
+	// Track existing markers and callsigns by hex_ident
+	const existingMarkersMap = new Map(window.aircraftMarkers.map(m => [m.hex_ident, m]));
 	window.aircraftMarkers = [];
+
+	// Remove old markers not in new data
+	existingMarkersMap.forEach((entry, hex_ident) => {
+		if (!aircraftArray.some(a => a.hex_ident === hex_ident)) {
+			window.map.removeLayer(entry.marker);
+			existingMarkersMap.delete(hex_ident);
+		}
+	});
 
 	aircraftArray.forEach((markerData) => {
 		const {
@@ -484,42 +492,54 @@ window.bus.addEventListener("bus:update_aircraft_markers", (evt) => {
 
 		const latitude = parseFloat(lat);
 		const longitude = parseFloat(lon);
+		const iconColor = "#2196f3";
+		const rotation = parseInt(track) || 0;
+		const label = callsign || hex_ident;
+		const altitudeLabel = altitude || "N/A";
 
-		let marker = existingMarkersMap.get(hex_ident);
-		if (marker) {
-			// Update existing marker location
-			marker.setLatLng([latitude, longitude]);
+		const generateIcon = () => L.divIcon({
+			className: "custom-aircraft-icon",
+			iconSize: [40, 40],
+			iconAnchor: [20, 28],
+			html: `
+				<div style="text-align: center; margin-top: 15px;">
+					<svg width="25" height="25" viewBox="0 0 40 40" style="transform: rotate(${rotation}deg);">
+						<rect x="18" y="6" width="4" height="20" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
+						<polygon points="20,2 23,10 17,10" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
+						<polygon points="20,26 24,38 16,38" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
+						<polygon points="18,16 2,22 18,22" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
+						<polygon points="22,16 38,22 22,22" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
+					</svg>
+					<div style="font-size: 12px; color: white; text-shadow: 0 0 3px black;">${label}</div>
+					<div style="font-size: 12px; color: white; text-shadow: 0 0 3px black;">${altitudeLabel}</div>
+				</div>
+			`
+		});
+
+		let entry = existingMarkersMap.get(hex_ident);
+
+		if (entry) {
+			// Update location
+			entry.marker.setLatLng([latitude, longitude]);
+
+			// Check if callsign changed
+			if (entry.callsign !== callsign) {
+				entry.marker.setIcon(generateIcon());
+				entry.callsign = callsign; // Update stored callsign
+			}
 		} else {
 			// Create new marker
-			const rotation = parseInt(track) || 0;
-			const iconColor = "#2196f3";
-			const aircraftIcon = L.divIcon({
-				className: "custom-aircraft-icon",
-				iconSize: [40, 40],
-				iconAnchor: [20, 28],
-				html: `
-					<div style="text-align: center; margin-top: 15px;">
-						<svg width="25" height="25" viewBox="0 0 40 40" style="transform: rotate(${rotation}deg);">
-							<rect x="18" y="6" width="4" height="20" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
-							<polygon points="20,2 23,10 17,10" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
-							<polygon points="20,26 24,38 16,38" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
-							<polygon points="18,16 2,22 18,22" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
-							<polygon points="22,16 38,22 22,22" fill="${iconColor}" stroke="#fff" stroke-width="1"/>
-						</svg>
-						<div style="font-size: 12px; color: white; text-shadow: 0 0 3px black;">${callsign || hex_ident}</div>
-						<div style="font-size: 12px; color: white; text-shadow: 0 0 3px black;">${altitude || "N/A"}</div>
-					</div>
-				`
-			});
+			const marker = L.marker([latitude, longitude], {
+				icon: generateIcon(),
+				title: callsign
+			}).addTo(window.map);
 
-			marker = L.marker([latitude, longitude], { icon: aircraftIcon, title: callsign }).addTo(window.map);
 			marker.on("click", () => {
 				if (window.selectedAircraft === hex_ident) return;
-
 				window.selectedAircraft = hex_ident;
 				updateSelectedAircraft();
 
-				// Remove existing modals
+				// Remove any open modals
 				document.querySelectorAll(".modal.show").forEach((m) => m.remove());
 
 				const modalId = `aircraft-modal-${hex_ident}`;
@@ -528,7 +548,7 @@ window.bus.addEventListener("bus:update_aircraft_markers", (evt) => {
 					  <div class="modal-dialog modal-dialog-centered">
 						<div class="modal-content">
 						  <div class="modal-header">
-							<h5 class="modal-title">Aircraft: ${callsign || hex_ident}</h5>
+							<h5 class="modal-title">Aircraft: ${callsign || '!' + hex_ident}</h5>
 							<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
 						  </div>
 						  <div class="modal-body">
@@ -559,9 +579,11 @@ window.bus.addEventListener("bus:update_aircraft_markers", (evt) => {
 					this.remove();
 				});
 			});
+
+			entry = { hex_ident, marker, callsign };
 		}
 
-		window.aircraftMarkers.push({ hex_ident, marker });
+		window.aircraftMarkers.push(entry);
 
 		if (window.selectedAircraft === hex_ident) {
 			updateSelectedAircraft();
@@ -569,6 +591,7 @@ window.bus.addEventListener("bus:update_aircraft_markers", (evt) => {
 		}
 	});
 });
+
 
 
 // Listen for a Reaper Node sending a global message

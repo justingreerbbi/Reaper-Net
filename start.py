@@ -98,21 +98,39 @@ def lookup_aircraft_info(icao):
     return {"type": "Unknown", "military": "Unknown"}
 
 ## Clean the database by removing old entries
-def clean_aircraft_db():
+from datetime import datetime, timedelta
+
+def clean_aircraft_data():
+    global aircraft_data
     while True:
-        with sqlite3.connect(DB_FILE) as conn:
-            now = datetime.utcnow()
-            print(f"[CLEANUP] Cleaning aircraft database at {now.strftime('%Y-%m-%d %H:%M:%S')}")
-            cursor = conn.cursor()
-            cutoff = datetime.utcnow() - timedelta(minutes=30)
-            cursor.execute('''
-                DELETE FROM aircraft WHERE last_seen < ?
-            ''', (cutoff.strftime("%Y-%m-%d %H:%M:%S"),))
-            cursor.execute('''
-                DELETE FROM aircraft_history WHERE last_seen < ?
-            ''', (cutoff.strftime("%Y-%m-%d %H:%M:%S"),))
-            conn.commit()
-        time.sleep(60 * 1)  # Clean every 30 minutes
+        print("[*] Cleaning old aircraft data...")
+
+        cutoff = datetime.utcnow() - timedelta(seconds=60)
+        to_remove = []
+
+        for icao, ac in list(aircraft_data.items()):
+            last_seen_str = ac.get("last_seen")
+            if last_seen_str:
+                try:
+                    last_seen_time = datetime.strptime(last_seen_str, "%Y-%m-%d %H:%M:%S")
+                    if last_seen_time < cutoff:
+                        to_remove.append(icao)
+                except Exception as e:
+                    print(f"  [!] Parse error for {icao}: {e}")
+                    to_remove.append(icao)
+            else:
+                to_remove.append(icao)
+
+        for icao in to_remove:
+            aircraft_data.pop(icao, None)
+            with sqlite3.connect(DB_FILE) as conn:
+                cursor = conn.cursor()
+                #cursor.execute("DELETE FROM aircraft WHERE icao = ?", (icao,))
+                if not appSettings.get("keep_aircraft_history_after_purge", False):
+                    cursor.execute("DELETE FROM aircraft_history WHERE icao = ?", (icao,))
+                conn.commit()
+        time.sleep(10)  # Clean every X seconds
+
         
 # === Enrich Aircraft Data from ADSBdb ===
 def enrich_aircraft_data():
@@ -216,10 +234,10 @@ def parse_sbs1_line(line):
 def sbs1_listener(host='127.0.0.1', port=30003):
     global aircraft_srd_connected
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((host, port))
+        with socket.create_connection((host, port)) as sock:
             print(f"[*] Connected to dump1090 on {host}:{port}")
             aircraft_srd_connected = True
+
             while True:
                 data = sock.recv(4096)
                 if not data:
@@ -227,18 +245,20 @@ def sbs1_listener(host='127.0.0.1', port=30003):
                 lines = data.decode(errors='ignore').splitlines()
 
                 now = datetime.utcnow()
+                last_seen_str = now.strftime("%Y-%m-%d %H:%M:%S")
+
                 for line in lines:
                     parsed = parse_sbs1_line(line)
                     if parsed and parsed.get("hex_ident"):
                         icao = parsed["hex_ident"]
                         ac = aircraft_data.setdefault(icao, {})
                         ac.update({k: v for k, v in parsed.items() if v})
-                        ac["last_seen"] = now.strftime("%Y-%m-%d %H:%M:%S")
+                        ac["last_seen"] = last_seen_str
 
                         if "type" not in ac:
                             info = lookup_aircraft_info(icao)
-                            ac["type"] = info["type"]
-                            ac["military"] = info["military"]
+                            ac["type"] = info.get("type", "Unknown")
+                            ac["military"] = info.get("military", "Unknown")
 
                         with sqlite3.connect(DB_FILE) as conn:
                             cursor = conn.cursor()
@@ -265,24 +285,8 @@ def sbs1_listener(host='127.0.0.1', port=30003):
                                 icao, ac.get("callsign", ""), ac.get("altitude", ""), ac.get("lat", ""), ac.get("lon", ""),
                                 ac.get("type", "Unknown"), ac.get("military", "Unknown"), ac["last_seen"]
                             ))
+
                             conn.commit()
-
-                        # Remove stale aircraft from aircraft_data
-                        stale_cutoff = time.time() - appSettings["aircraft_data_purge_cutoff"]
-                        to_remove = []
-                        for k, v in aircraft_data.items():
-                            last_seen = v.get("last_seen")
-                            if last_seen:
-                                try:
-                                    ts = time.mktime(time.strptime(last_seen, "%Y-%m-%d %H:%M:%S"))
-                                    if ts < stale_cutoff:
-                                        to_remove.append(k)
-                                except Exception:
-                                    continue
-                        for k in to_remove:
-                            del aircraft_data[k]
-                        
-
 
     except Exception as e:
         print(f"[!] SBS1 error: {e}")
@@ -379,6 +383,8 @@ if __name__ == '__main__':
 
     # Set threading to emit aircraft on a regular interval
     threading.Thread(target=emit_aircraft_data, daemon=True).start()
+
+    threading.Thread(target=clean_aircraft_data, daemon=True).start()
 
     # For development purposes, open the web browser automatically.
     webbrowser.open("http://localhost:1776")
