@@ -574,9 +574,12 @@ window.bus.addEventListener("bus:update_aircraft_markers", (evt) => {
 				const bsModal = new bootstrap.Modal(document.getElementById(modalId));
 				bsModal.show();
 				document.getElementById(modalId).addEventListener("hidden.bs.modal", function () {
+					this.remove();
+				});
+
+				document.getElementById(modalId).addEventListener("hide.bs.modal", function () {
 					window.selectedAircraft = null;
 					updateSelectedAircraft();
-					this.remove();
 				});
 			});
 
