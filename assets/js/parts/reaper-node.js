@@ -122,6 +122,8 @@ export function sendGlobalMessage(message) {
 
 	addGroupMessageToStorage(msgObj);
 
+	// Send the message to the Reaper Node in the proper format
+	if (reaper_log) reaper_log.textContent += `Sending global message: ${message}\n`;
 	reaperNodeSocket.emit("send_reaper_node_command", { command: "AT+MSG=" + message });
 
 	if (pendingMessageTimer) clearTimeout(pendingMessageTimer);
@@ -158,6 +160,20 @@ export function sendCommandToReaperNode(command) {
 	reaperNodeSocket.emit("send_reaper_node_command", { command });
 }
 
+function updateReaperNodeTransferStatus(text) {
+	const statusText = document.getElementById("reaper-node-transfer-status-text");
+	if (statusText) {
+		statusText.textContent = text;
+	}
+}
+
+function clearReaperNodeTransferStatus() {
+	const statusText = document.getElementById("reaper-node-transfer-status-text");
+	if (statusText) {
+		statusText.textContent = "IDLE";
+	}
+}
+
 /**
  * Parse and handle all Reaper Node serial messages
  */
@@ -168,6 +184,28 @@ function handleReaperResponse(data) {
 	localStorage.setItem("reaper_node_lines", JSON.stringify(reaper_node_lines));
 
 	const parts = data.split("|");
+
+	if (parts[0] == "SENDING") {
+		// Format SENDING|MSGID|<msgid|<total fragments>
+		var sendingMsgId = parts[2];
+		var totalFragments = parseInt(parts[3]);
+		//if (reaper_log) reaper_log.textContent += `Sending message with ID: ${sendingMsgId} (${totalFragments} fragments)\n`;
+		updateReaperNodeTransferStatus(`Preparing to Send`);
+	}
+
+	if (parts[0] == "SEND") {
+		// Format SEND|FRAG|<msgId|<frag>/<total_frags>|<current_attempt/<total_attempts>
+		const msgId = parts[2];
+		const fragInfo = parts[3].split("/");
+		const currentFrag = parseInt(fragInfo[0], 10);
+		const totalFrags = parseInt(fragInfo[1], 10);
+		const attemptsInfo = parts[4].split("/");
+		const currentAttempt = parseInt(attemptsInfo[0], 10);
+		const totalAttempts = parseInt(attemptsInfo[1], 10);
+		const fragPercentage = Math.floor((currentFrag / totalFrags) * 100);
+		//if (reaper_log) reaper_log.textContent += `Sending fragment ${currentFrag}/${totalFrags} for message ID: ${msgId} (Attempt ${currentAttempt}/${totalAttempts})\n`;
+		updateReaperNodeTransferStatus(`Sending: ${fragPercentage}% - Attempt ${currentAttempt}/${totalAttempts}`);
+	}
 
 	if (parts[0] == "GPS") {
 		const gpsData = parts[1].split(",");
@@ -214,13 +252,17 @@ function handleReaperResponse(data) {
 	}
 
 	// === TRACK ACK_CONFIRM ===
-	if (parts[0] === "RECV" && parts[1] === "ACK_CONFIRM") {
+	if (parts[0] === "ACK" && parts[1] === "CONFIRM") {
 		const msgId = parts[2];
-		if (msgId === sendingMessageMsgId) {
-			isSendingMessage = false;
-			sendingMessageMsgId = null;
-			if (pendingMessageTimer) clearTimeout(pendingMessageTimer);
-		}
+		const receivedBy = parts[3] || "Unknown";
+		updateReaperNodeTransferStatus("Message sent successfully!");
+		setTimeout(() => {
+			clearReaperNodeTransferStatus();
+		}, 2000);
+		//if (msgId === sendingMessageMsgId) {
+		isSendingMessage = false;
+		sendingMessageMsgId = null;
+		//}
 	}
 
 	// === HANDLE GROUP MSG ===
@@ -289,24 +331,6 @@ function handleReaperResponse(data) {
 		};
 		addReaperNodeToContactList(m);
 		window.bus.dispatchEvent(new CustomEvent("bus:reaper_node_received_beacon", { detail: m }));
-	}
-
-	// === HANDLE GENERIC ACK CONFIRM ===
-	if (parts[0] === "ACK" && parts[1] === "CONFIRM") {
-		const msgId = parts[2];
-		if (msgId === sendingMessageMsgId) {
-			isSendingMessage = false;
-			sendingMessageMsgId = null;
-			if (pendingMessageTimer) clearTimeout(pendingMessageTimer);
-
-			const messages = JSON.parse(localStorage.getItem("reaper_global_messages") || "[]");
-			const idx = messages.findIndex((m) => m.msgId === msgId);
-			if (idx !== -1) {
-				messages[idx].type = "received";
-				localStorage.setItem("reaper_global_messages", JSON.stringify(messages));
-				window.updateGroupMessagesContent?.();
-			}
-		}
 	}
 }
 

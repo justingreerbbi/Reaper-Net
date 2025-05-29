@@ -464,3 +464,19 @@ hr.short {
 	border-color: #444;
 	margin: 1em 0;
 }
+
+/* == Reaper Node Tranceiver Status ==*/
+#sending-message-progress-bar-container {
+	position: absolute;
+	bottom: 20px;
+	left: 20px;
+	width: 300px;
+	height: 30px;
+	background-color: rgba(0, 0, 0, 0.8);
+	border-radius: 5px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1001;
+}

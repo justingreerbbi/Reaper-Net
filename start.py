@@ -189,7 +189,7 @@ def auto_find_reaper_mesh_node():
                 while time.time() - start_time < REAPER_NODE_DETECTION_TIMEOUT:
                     if ser.in_waiting:
                         line = ser.readline().decode(errors='ignore').strip()
-                        if line.startswith("HELTEC|READY|"):
+                        if line.startswith("REAPER_NODE|READY|"):
                             label = line.split("|")[2]
                             devices[port.device] = label
                             break
@@ -375,16 +375,12 @@ if __name__ == '__main__':
     ## Start the server
     threading.Thread(target=start_server, daemon=True).start()
 
-    # Start the aircraft connection and logic
-    threading.Thread(target=sbs1_listener, daemon=True).start()
-
-    # Set threading to update aircraft data in the database with real information from outside resources if allowed and connected to the internet.
-    threading.Thread(target=enrich_aircraft_data, daemon=True).start()
-
-    # Set threading to emit aircraft on a regular interval
-    threading.Thread(target=emit_aircraft_data, daemon=True).start()
-
-    threading.Thread(target=clean_aircraft_data, daemon=True).start()
+    # Only run if the aircraft tracker (SDR) is connected.
+    if aircraft_srd_connected:
+        threading.Thread(target=sbs1_listener, daemon=True).start()
+        threading.Thread(target=enrich_aircraft_data, daemon=True).start()
+        threading.Thread(target=emit_aircraft_data, daemon=True).start()
+        threading.Thread(target=clean_aircraft_data, daemon=True).start()
 
     # For development purposes, open the web browser automatically.
     webbrowser.open("http://localhost:1776")
