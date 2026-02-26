@@ -1,104 +1,122 @@
 # Reaper Net
 
-**IN DEVELOPMENT**
+Reaper Net is a self-hosted, offline-first mapping application designed for field operations, mobile command setups, and environments where internet access is limited or unavailable. It provides a cross-platform map interface that can operate on its own as a local mapping tool, while also supporting optional hardware integrations such as Reaper Nodes for messaging and team tracking.
 
-Reaper Net is an offline mapping system. Add-ons like node communication, GPS, and more can be added to create a more robust system. Reaper Net is designed to be entirely self-hosted.
+The project is still in active development, but the current foundation already supports offline maps, marker workflows, and integration points for communication and device-based location tracking.
 
-This project is quickly evolving into a suite that I envision being useful for off-grid tactical solutions. It shows potential for complete off-grid mapping with the ability to pair with text messaging via LoRa and other SIGINT tools. It is currently cross-platform and will remain so as much as possible.
-
-> ⚠️ A Reaper Node **must** be plugged in before starting Reaper Net if you want to use messaging and node tracking.
+> A Reaper Node must be connected before launching Reaper Net if you want to use messaging or node tracking features.
 
 ![Reaper Net Screenshot](https://github.com/justingreerbbi/Reaper-Net/blob/main/assets/images/screenshot-1.png)
 
-## Who Is This For?
+## Overview
 
-Reaper Net can be used in multiple scenarios. If you want to set up a command center, either stationary or mobile, this project is for you. It is a great solution for off-road teams. Team leaders can use this application to see where all vehicles are and send text messages to them.
+Reaper Net is built for users who need a local, self-hosted mapping system that can be extended with communications, GPS, and additional field tools. The project is intended to remain as cross-platform as possible and is evolving into a broader ecosystem for offline mapping, local coordination, and hardware-assisted situational awareness.
 
-While the project is not production-ready yet, it offers a glimpse into its capabilities.
+At its core, Reaper Net can function as a standalone map viewer. With the backend and supported hardware connected, it expands into a richer platform for team coordination, marker management, device tracking, and message exchange.
 
-## Todos
+## Who This Is For
 
--   Location history for reaper nodes.
--   Add ADS-B support with the ability to marker aircraft friendly or enemy, or unknown as well as add a description. Local storage and server api for saving to local system. [https://airmetar.main.jp/radio/ADS-B%20Decoding%20Guide.pdf]
--   Add proper support for icons for different types of markers.
--   Finish migrating reaper-node functions to use core API and hooks instead of direct integration.
--   Start really honing on on structure, API, and exported hooks. Determine what is core and what is a plugin.
--   Build packer for the app for windows, OSX, and Raspberry. While the system will be already installed on the product, for public, this is the best case.
+Reaper Net is designed for users who need local mapping and coordination tools without depending on cloud services. It is especially well suited for:
 
-## Features
+- Mobile or stationary command center setups
+- Off-road teams and convoy coordination
+- Field teams that need local mapping and text communication
+- Self-hosted environments where privacy and control matter
+- Experimental off-grid mapping and communications workflows
 
--   Offline maps.
--   Group Text Messaging.
--   Direct Text Messages.
--   Extendable by plugins using the core API.
--   AES256 Encryption.
--   Team Member Tracking.
+The project is not yet production-ready, but it already demonstrates the direction and core capabilities of the system.
 
-## GeoTIFF Overlay
+## Current Features
 
-Reaper Net supports uploading, converting, and applying GeoTIFF files. GeoTIFF files **must** use projection EPSG:3857. While other projections can be used, automatic conversion requires additional server setup. Native in-browser conversion is under consideration.
+- Offline map support
+- Group text messaging through supported node hardware
+- Direct text messaging
+- Team member and node tracking
+- Plugin-based extensibility through the core API
+- AES-256 encrypted communications
+- GeoTIFF overlay support for historical and reference maps
+- Cross-platform development approach
 
-Sources for GeoTIFFs:
+## Architecture Direction
 
--   [USGS TopoView](https://ngmdb.usgs.gov/topoview/viewer/) - Free historic maps
--   [David Rumsey Map Collection](https://www.davidrumsey.com/) - Historical imagery
+Reaper Net is being developed as a core platform with optional add-ons and integrations. The long-term goal is to separate core mapping capabilities from optional plugins and hardware modules, making it easier to extend, maintain, and package across multiple deployment targets.
 
-### What Are GeoTIFF Files?
+Areas such as node communication, GPS, overlays, tracking, and future signal-intelligence-related tooling are intended to fit into that broader modular structure over time.
 
-GeoTIFF files are scanned historic maps enhanced with embedded metadata, allowing mapping software to correctly place them with proper scale. These are not standard image files and contain spatial metadata specific to systems like Reaper Net.
+## GeoTIFF Overlay Support
+
+Reaper Net supports uploading, converting, and applying GeoTIFF overlays.
+
+GeoTIFF files should use the `EPSG:3857` projection. Other projections may be usable, but automatic conversion may require additional server-side tooling. Native browser-based conversion may be added in a future release.
+
+### What Is a GeoTIFF?
+
+A GeoTIFF is an image file that contains embedded geographic metadata. This allows mapping software to place the image accurately on the map with the correct scale and alignment.
+
+In Reaper Net, GeoTIFF overlays can be used for historical maps, scanned field maps, and other georeferenced reference materials.
+
+### GeoTIFF Sources
+
+- [USGS TopoView](https://ngmdb.usgs.gov/topoview/viewer/) - Free historical topographic maps
+- [David Rumsey Map Collection](https://www.davidrumsey.com/) - Historical maps and imagery
 
 ## Installation
 
-You should have at least Python 3.13.2 for development Releases are prepackaged and ready to go.
+For development, Python 3.13.2 or newer is recommended. Prepackaged releases are intended to simplify installation for end users when available.
 
-1. Clone the repository:
+### Clone the Repository
 
-    ```bash
-    git clone https://github.com/justingreerbbi/Reaper-Net.git
-    ```
+```bash
+git clone https://github.com/justingreerbbi/Reaper-Net.git
+```
 
-2. Navigate to the project directory:
+### Change into the Project Directory
 
-    ```bash
-    cd reaper-net
-    ```
+```bash
+cd Reaper-Net
+```
 
-3. Install dependencies:
+### Install Dependencies
 
-    ```bash
-    pip install pyserial flask flask-socketio
-    ```
+```bash
+pip install pyserial flask flask-socketio
+```
 
-## Usage
+## Running the Application
 
-Reaper Net works as a basic map viewer without the backend. To save markers, use GPS, or communicate with a Reaper Node, start the backend:
+Reaper Net can function as a basic map viewer without the backend, but features such as marker persistence, GPS integration, node communication, and tracking require the backend to be running.
+
+Start the backend with:
 
 ```bash
 python start.py
 ```
 
-### Reaper Node
+## Reaper Node Integration
 
-Reaper Node Firmware: [Reaper Mesh](https://github.com/justingreerbbi/Reaper-Mesh).
+Reaper Net supports Reaper Nodes, which are custom devices running the Reaper Mesh firmware on Heltec V3 hardware.
 
-This application supports Reaper Nodes (custom firmware on Heltec V3) via USB. When plugged in and the app is started, the node is auto-detected, and encrypted communication is enabled.
+Reaper Mesh firmware:
+[Reaper Mesh](https://github.com/justingreerbbi/Reaper-Mesh)
 
-Currently:
+When a supported node is connected by USB before startup, Reaper Net can detect it and enable node-based communication and tracking features.
 
--   Only one frequency is supported
--   LoRa settings are optimized
--   All messages are broadcast to nearby nodes
+### Current Behavior
 
-Planned improvements:
+- One frequency is currently supported
+- LoRa settings are preconfigured
+- Messages are broadcast to nearby compatible nodes
 
--   Custom encryption keys/methods
--   Direct messaging
--   Channel scanning
--   Potential Meshtastic compatibility
+### Planned Improvements
 
-This project favors custom communication protocols to ensure privacy and reliability.
+- Custom encryption keys and key management
+- Additional messaging improvements
+- Channel scanning
+- Expanded node and network controls
 
-### Supported Node Commands
+Reaper Net currently uses a custom communication approach for privacy, control, and tight integration with the rest of the platform.
+
+## Supported Reaper Node Commands
 
 ```text
 AT+DEVICE?
@@ -108,49 +126,63 @@ AT+BEACON
 AT+GPS?
 ```
 
-### Nina The Reaper Hardware
+## Nina the Reaper Hardware
 
-"Nina the Reaper" is an ESP32 MicroMod-based device with LTE, Wi-Fi, BLE, and GPS. While functional, it is costly (a few hundred dollars), making it impractical for LTE connectivity at scale.
+“Nina the Reaper” is an ESP32 MicroMod-based hardware concept that includes LTE, Wi-Fi, BLE, and GPS support.
 
-Plans are underway to design a custom board integrating the LoRa node to reduce cost.
+While functional, this design is relatively expensive, which makes it less practical for large-scale LTE-connected deployments. Future hardware work is expected to focus on reducing cost and improving integration, including possible designs that combine node communication features into a more efficient custom board.
 
-Supported commands:
+### Supported Nina Commands
 
--   `NR -> OK` – Device is ready
--   `NR+GPS -> NR+GPS=LAT:<lat>,LNG:<lng>` or `NR+GPS=NOFIX`
--   `NR+BATT` – Battery voltage
--   `NR+RSSI` – Signal strength
--   `NR+INFO` – Modem information
+- `NR -> OK` - Device is ready
+- `NR+GPS -> NR+GPS=LAT:<lat>,LNG:<lng>` or `NR+GPS=NOFIX`
+- `NR+BATT` - Battery voltage
+- `NR+RSSI` - Signal strength
+- `NR+INFO` - Modem information
+
+## Development Priorities
+
+The following items are planned or under consideration:
+
+- Location history for Reaper Nodes
+- ADS-B support with aircraft classification and descriptions
+- Improved marker icon support
+- Continued migration of Reaper Node features to the core API and hooks
+- Clear separation of core platform features and plugin functionality
+- Better packaging for Windows, macOS, and Raspberry Pi deployments
+
+Reference material for ADS-B work:
+[ADS-B Decoding Guide](https://airmetar.main.jp/radio/ADS-B%20Decoding%20Guide.pdf)
 
 ## Contributing
 
-Contributions are welcome!
+Contributions are welcome.
+
+To contribute:
 
 1. Fork the repository
-2. Create a new branch:
+2. Create a new branch
 
-    ```bash
-    git checkout -b feature-name
-    ```
+```bash
+git checkout -b feature-name
+```
 
-3. Commit your changes:
+3. Commit your changes
 
-    ```bash
-    git commit -m "Add feature-name"
-    ```
+```bash
+git commit -m "Add feature-name"
+```
 
-4. Push your branch:
+4. Push your branch
 
-    ```bash
-    git push origin feature-name
-    ```
+```bash
+git push origin feature-name
+```
 
 5. Open a pull request
+
+For larger changes, opening an issue first is recommended so the approach can be discussed before implementation.
 
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Contact
-
-For questions or support, contact \[[your-email@example.com](mailto:your-email@example.com)].
